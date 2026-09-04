@@ -496,6 +496,7 @@ async function nightPhase() {
   logHeader(`夜晚（第 ${G.night} 夜）`);
   G.phase = 'night';
   G.nightDead = [];
+  syncViews();   // 与 dayPhase 对称：入夜后立刻重绘，否则状态条会一直停在「白天」
 
   // ---- 狼人行动 ----
   const victim = byId(await wolvesDecide());

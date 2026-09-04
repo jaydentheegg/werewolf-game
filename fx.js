@@ -380,6 +380,18 @@
   /* ============================================================
    * 四、相位（含电影式墨迹转场）
    * ============================================================ */
+  /* 由过场标题卡给出的权威相位。#stDay 是滞后的（game.js 在某些分支里
+   * 改了 G.phase 却没马上重绘），只靠它会出现"已经天黑、背景还亮着"。
+   * 只认这三张真正的相位边界卡；预言家查验结果那种私有遮罩虽然也带
+   * cls="day"，但它发生在夜里，必须排除。 */
+  let veilPhase = null;
+  function phaseFromVeilText(txt) {
+    if (!txt) return null;
+    if (txt.includes('天黑')) return 'night';
+    if (txt.includes('天亮') || txt.includes('投票时间')) return 'day';
+    return null;
+  }
+
   function readPhase() {
     const game = $('game');
     if (!game || game.classList.contains('hidden')) return 'night';  // 菜单/大厅恒为夜
@@ -387,6 +399,7 @@
      * 结算遮罩盖不到的地方（顶栏一带）就会露出一条白底。 */
     const ov = $('overlay');
     if (ov && !ov.classList.contains('hidden')) return 'night';
+    if (veilPhase) return veilPhase;                                 // 权威信号优先
     const txt = $('stDay')?.textContent || '';
     if (txt.includes('白天')) return 'day';
     return 'night';
@@ -410,7 +423,10 @@
     if (el) new MutationObserver(syncPhase).observe(el, { childList: true, characterData: true, subtree: true });
   });
   const gameEl = $('game');
-  if (gameEl) new MutationObserver(syncPhase).observe(gameEl, { attributes: true, attributeFilter: ['class'] });
+  if (gameEl) new MutationObserver(() => {
+    if (gameEl.classList.contains('hidden')) veilPhase = null;   // 回到菜单：清掉上一局的相位
+    syncPhase();
+  }).observe(gameEl, { attributes: true, attributeFilter: ['class'] });
   applyPhase();
 
   /* ============================================================
@@ -420,6 +436,8 @@
   if (veil) {
     new MutationObserver(() => {
       if (veil.classList.contains('hidden')) return;
+      const p = phaseFromVeilText(veilInner?.textContent || '');
+      if (p && p !== veilPhase) { veilPhase = p; syncPhase(); }
       const c = veilInner?.className || '';
       const isWolf = c.includes('wolf');
       const color = isWolf ? [192, 52, 47] : c.includes('day') ? [212, 130, 70] : [184, 145, 80];
