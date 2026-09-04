@@ -47,6 +47,14 @@ const COMPOSITIONS = {
   12: ['wolf', 'wolf', 'wolf', 'wolf', 'seer', 'witch', 'hunter', 'villager', 'villager', 'villager', 'villager', 'villager'],
 };
 
+/* 自定义阵容（首页可调）。为 null 时沿用上面的默认表。
+ * 由 compose.js 通过 setCustomComposition() 写入，其余逻辑一律走 compFor()。 */
+let CUSTOM_COMP = null;
+function compFor(n) {
+  return (CUSTOM_COMP && CUSTOM_COMP.length === n) ? CUSTOM_COMP.slice() : COMPOSITIONS[n];
+}
+function setCustomComposition(arr) { CUSTOM_COMP = (arr && arr.length) ? arr.slice() : null; }
+
 const BOT_NAMES = ['小明', '小红', '阿强', '小美', '大壮', '静香', '老王', '阿豪', '丽丽', '铁柱', '翠花', '二狗', '小芳', '老张', '毛毛', '丫丫'];
 
 /* ---------- 界面引用 ---------- */
@@ -676,7 +684,7 @@ async function dayPhase() {
  * 开局 / 胜负
  * ============================================================ */
 function showRolePreview(n) {
-  const comp = COMPOSITIONS[n];
+  const comp = compFor(n);
   const counts = {};
   comp.forEach(r => counts[r] = (counts[r] || 0) + 1);
   $('rolePreview').innerHTML =
@@ -686,7 +694,7 @@ function showRolePreview(n) {
 
 /* humans: [{peerId|null, name}]，peerId=null 表示房主本人 */
 function dealGame(n, humans) {
-  const roles = shuffle(COMPOSITIONS[n]);
+  const roles = shuffle(compFor(n));
   const takenNames = humans.map(h => h.name);
   const pool = shuffle(BOT_NAMES.filter(x => !takenNames.includes(x)));
   G = {

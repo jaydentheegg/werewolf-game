@@ -780,3 +780,67 @@ html[data-phase="day"] .logbox { background: rgba(252, 250, 245, 0.82); }
   .card.playing::after { display: none; }
   .veilInner::after { width: min(52vw, 420px); }
 }
+
+/* ============================================================
+ * 自定义阵营人数（compose.js）
+ * ============================================================ */
+.comp-toggle {
+  margin-top: 12px; background: none; border: none; cursor: pointer;
+  font-family: inherit; font-size: 11px; font-weight: 700;
+  letter-spacing: 0.18em; color: var(--accent);
+  padding: 8px 0; min-height: 34px;
+}
+.comp-toggle::before { content: "＋ "; }
+.comp-toggle[aria-expanded="true"]::before { content: "－ "; }
+.comp-toggle:hover { color: var(--gold-lit); }
+
+.comp {
+  margin-top: 12px; padding: 14px;
+  border: 1px solid var(--line); border-radius: 2px;
+  background: var(--bg-sunk);
+}
+.comp-rows { display: flex; flex-direction: column; gap: 6px; }
+.comp-row {
+  display: flex; align-items: center; gap: 10px;
+  padding: 7px 4px;
+  border-bottom: 1px solid var(--line-soft);
+}
+.comp-row:last-child { border-bottom: none; }
+.comp-row .sigil { width: 20px; height: 20px; flex: none; --sig-cut: #0a0b0f; }
+html[data-phase="day"] .comp-row .sigil { --sig-cut: #d8d3c7; }
+.comp-row[data-role="wolf"] .sigil { color: var(--wolf); }
+.comp-name { flex: 1; font-size: 13px; letter-spacing: 0.06em; }
+.comp-note {
+  display: block; font-style: normal; font-size: 10px;
+  color: var(--muted); letter-spacing: 0.04em; margin-top: 2px;
+}
+
+.comp-stepper { display: flex; align-items: center; gap: 2px; flex: none; }
+.comp-btn {
+  width: 32px; height: 32px; flex: none;   /* 配合行高，触控区达标 */
+  border: 1px solid var(--line); background: transparent;
+  color: var(--text); font-size: 15px; line-height: 1; cursor: pointer;
+  border-radius: 2px;
+  transition: border-color var(--t-tap) var(--ease), color var(--t-tap) var(--ease);
+}
+.comp-btn:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); }
+.comp-btn:disabled { opacity: 0.28; cursor: not-allowed; }
+.comp-num {
+  min-width: 30px; text-align: center;
+  font-family: "SF Mono", Menlo, Consolas, monospace;
+  font-size: 15px; font-weight: 700; font-variant-numeric: tabular-nums;
+}
+
+.comp-foot {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 10px; margin-top: 12px; padding-top: 10px;
+  border-top: 1px solid var(--line);
+}
+.comp-tally { font-size: 11px; letter-spacing: 0.1em; color: var(--muted); }
+.comp-tally b { color: var(--text); }
+.comp-tally.is-bad, .comp-tally.is-bad b { color: var(--blood-lit); }
+.comp-warn {
+  margin-top: 10px; font-size: 12px; line-height: 1.7;
+  color: var(--blood-lit);
+  border-left: 2px solid var(--blood-lit); padding-left: 10px;
+}

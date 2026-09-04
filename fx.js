@@ -97,7 +97,10 @@
 
   function resize() {
     DPR = Math.min(devicePixelRatio || 1, 2);
-    W = innerWidth; H = innerHeight;
+    W = innerWidth | 0; H = innerHeight | 0;
+    /* 视口为 0（面板隐藏 / 尚未布局）时不要把画布设成 0×0：
+     * 之后 drawImage 会抛 InvalidStateError，并在 rAF 回调里终止整个循环。 */
+    if (W <= 0 || H <= 0) return;
     for (const c of [cv, sky, skyTo, scratch]) { c.width = W * DPR; c.height = H * DPR; }
     ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
     skyKey = null;
@@ -217,6 +220,7 @@
   }
 
   function draw() {
+    if (W <= 0 || H <= 0 || cv.width === 0 || sky.width === 0) return;   // 尺寸未就绪，跳过这一帧
     ctx.clearRect(0, 0, W, H);
     ctx.save();
     if (shakeT > 0) {
@@ -305,7 +309,7 @@
   function loop(now) {
     const dt = Math.min(50, now - last || 16);
     last = now;
-    step(dt); draw();
+    try { step(dt); draw(); } catch (e) { /* 单帧异常不应终止整个循环 */ }
     raf = requestAnimationFrame(loop);
   }
 
@@ -622,8 +626,10 @@
     /* rAF 被暂停（切标签页 / 窗口失焦 / 节流）时画面会冻在半溶解帧，
      * 回来后必须立刻补齐：结束过期转场并重画。 */
     const revive = () => {
+      if (W <= 0 || H <= 0 || cv.width === 0) resize();      // 隐藏期间尺寸可能归零
+      if (W <= 0 || H <= 0) return;
       if (trans && performance.now() - trans.t0 >= 900) { phaseT = trans.to; trans = null; skyKey = null; }
-      step(16); draw();
+      try { step(16); draw(); } catch (e) {}
       if (!raf) { last = performance.now(); raf = requestAnimationFrame(loop); }
     };
     document.addEventListener('visibilitychange', () => {
