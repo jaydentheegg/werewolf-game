@@ -2,83 +2,150 @@
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>🌙 网页狼人杀</title>
-<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🌙</text></svg>">
-<link rel="stylesheet" href="style.css?v=6" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<title>天黑，请闭眼 · 狼人杀</title>
+<meta name="theme-color" content="#07070a" />
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' fill='%2307070a'/><circle cx='50' cy='44' r='24' fill='%23e8e2d6'/><circle cx='62' cy='36' r='21' fill='%2307070a'/></svg>">
+<link rel="stylesheet" href="style.css?v=20" />
 </head>
 <body>
 
+<!-- ============================================================
+     原创角色符号（SVG sprite）
+     fx.js 用它替换卡面 emoji —— 几何 / 塔罗牌式剪影，
+     避免把 emoji 当作主要视觉资产。
+     ============================================================ -->
+<svg class="sigil-defs" aria-hidden="true" focusable="false">
+  <defs>
+    <symbol id="sig-wolf" viewBox="0 0 32 32">
+      <path d="M5 5 L11.5 11.5 L20.5 11.5 L27 5 L25.6 15.4 Q25.6 23 16 28 Q6.4 23 6.4 15.4 Z"/>
+      <path class="sig-cut" style="fill:var(--sig-cut,#07070a)" d="M11.6 15.6 l3.2 1.8 -3.2 1.8 z M20.4 15.6 l-3.2 1.8 3.2 1.8 z"/>
+      <path class="sig-cut" style="fill:var(--sig-cut,#07070a)" d="M14.4 22.2 h3.2 l-1.6 2.5 z"/>
+    </symbol>
+    <symbol id="sig-seer" viewBox="0 0 32 32">
+      <path d="M2 16 Q16 5.5 30 16 Q16 26.5 2 16 Z"/>
+      <circle class="sig-cut" style="fill:var(--sig-cut,#07070a)" cx="16" cy="16" r="5.4"/>
+      <circle cx="16" cy="16" r="2.4"/>
+      <path class="sig-hair" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" d="M16 3.2 v2.6 M27.6 7.0 l-2 2 M4.4 7.0 l2 2"/>
+    </symbol>
+    <symbol id="sig-witch" viewBox="0 0 32 32">
+      <path d="M12.6 3.6 h6.8 v7.2 l6.2 11.4 q1.9 3.5 -2 4.6 h-15.2 q-3.9 -1.1 -2 -4.6 z"/>
+      <path class="sig-cut" style="fill:var(--sig-cut,#07070a)" d="M10.4 19.6 h11.2 q1.4 2.6 1.9 4.4 h-15 q0.5 -1.8 1.9 -4.4 z"/>
+      <circle class="sig-cut" style="fill:var(--sig-cut,#07070a)" cx="14.2" cy="22.7" r="1.15"/>
+      <circle class="sig-cut" style="fill:var(--sig-cut,#07070a)" cx="18.7" cy="23.5" r="0.85"/>
+    </symbol>
+    <symbol id="sig-hunter" viewBox="0 0 32 32">
+      <path class="sig-hair" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" d="M10.5 3.5 Q21.5 16 10.5 28.5"/>
+      <path class="sig-hair" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" d="M10.5 3.5 V28.5"/>
+      <path class="sig-hair" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" d="M7.5 16 H25"/>
+      <path d="M27 16 l-5.6 -3.2 v6.4 z"/>
+    </symbol>
+    <symbol id="sig-villager" viewBox="0 0 32 32">
+      <path d="M16 4 Q24.4 4 24.4 13.4 V20 Q24.4 28 16 28 Q7.6 28 7.6 20 V13.4 Q7.6 4 16 4 Z"/>
+      <path class="sig-cut" style="fill:var(--sig-cut,#07070a)" d="M16 8.6 q5.2 0 5.2 6.1 v3.6 q0 4.4 -5.2 4.4 q-5.2 0 -5.2 -4.4 v-3.6 q0 -6.1 5.2 -6.1 z"/>
+      <circle cx="13.4" cy="15.6" r="1.25"/>
+      <circle cx="18.6" cy="15.6" r="1.25"/>
+    </symbol>
+    <!-- 未知身份：兜帽下没有面孔 -->
+    <symbol id="sig-unknown" viewBox="0 0 32 32">
+      <path d="M16 3.4 Q25.2 3.4 25.2 13.6 V20.4 Q25.2 28.6 16 28.6 Q6.8 28.6 6.8 20.4 V13.6 Q6.8 3.4 16 3.4 Z"/>
+      <path class="sig-cut" style="fill:var(--sig-cut,#07070a)" d="M16 8 q6 0 6 6.8 v4.4 q0 5.2 -6 5.2 q-6 0 -6 -5.2 v-4.4 q0 -6.8 6 -6.8 z"/>
+      <path class="sig-hair sig-thin" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" opacity="0.75" d="M11.8 16.8 q4.2 -2.4 8.4 0"/>
+    </symbol>
+  </defs>
+</svg>
+
 <!-- 顶栏 -->
 <header class="topbar">
-  <div class="title">🌕 网页狼人杀</div>
+  <div class="title"><span class="title-mark" aria-hidden="true"></span>天黑，请闭眼</div>
   <div id="phaseBadge" class="badge">准备中</div>
 </header>
 
-<!-- 主菜单 / 设置界面 -->
+<!-- ============================================================
+     主菜单 / 设置 —— 电影序幕版式
+     ============================================================ -->
 <section id="setup" class="screen">
-  <div class="panel">
-    <h1>🐺 天黑请闭眼</h1>
-    <p class="sub">单机人机 or 同房间号真人联机 · 身份随机发放</p>
+  <div class="prologue">
 
-    <div class="field">
-      <label for="nameInp">你的昵称</label>
-      <input type="text" id="nameInp" placeholder="例如：狼王小白" maxlength="12" />
+    <div class="prologue-title">
+      <p class="eyebrow">村庄 · 第一夜</p>
+      <h1 class="mega">
+        <span class="mega-line">天黑</span>
+        <span class="mega-line mega-line--cut">请闭眼<i class="slash" aria-hidden="true"></i></span>
+      </h1>
+      <p class="lede">
+        八个人围坐，其中有人不是人。<br>
+        单机人机 or 同房间号真人联机 · 身份随机发放。
+      </p>
+      <div class="rule-row" aria-hidden="true"><span class="rule"></span><span class="rule-dot"></span></div>
     </div>
 
-    <div class="field">
-      <label for="countSel">总玩家人数（单机含你 / 联机含真人 + AI）</label>
-      <select id="countSel">
-        <option value="6">6 人</option>
-        <option value="7">7 人</option>
-        <option value="8" selected>8 人（推荐）</option>
-        <option value="9">9 人</option>
-        <option value="10">10 人</option>
-        <option value="11">11 人</option>
-        <option value="12">12 人</option>
-      </select>
-    </div>
-
-    <div id="rolePreview" class="rolepreview"></div>
-
-    <button id="startBtn" class="btn primary big">🎮 单机开局（你 + AI）</button>
-
-    <div class="divider"><span>或 · 真人联机</span></div>
-
-    <div class="btnrow">
-      <button id="btnCreate" class="btn primary">🌐 创建房间</button>
-      <button id="btnJoin" class="btn ghost">🔑 加入房间</button>
-    </div>
-
-    <div id="joinRow" class="field hidden">
-      <label for="joinCodeInp">输入好友给你的房间号</label>
-      <div class="optrow">
-        <input type="text" id="joinCodeInp" placeholder="例如 WOLF23" maxlength="10" style="flex:1" />
-        <button id="joinBtn" class="btn primary">加入</button>
+    <div class="prologue-form panel">
+      <div class="field">
+        <label for="nameInp">你的昵称</label>
+        <input type="text" id="nameInp" placeholder="例如：狼王小白" maxlength="12" />
       </div>
-      <div class="hint" style="font-size:12px;color:var(--muted)">联机走 P2P 直连，无需服务器；首次使用请保证能联网加载联机模块。</div>
-    </div>
 
-    <details class="howto">
-      <summary>玩法速览（点击展开）</summary>
-      <ul>
-        <li><b>狼人</b>：每晚睁眼杀一个人，目标是杀光所有神民。</li>
-        <li><b>预言家</b>：每晚查验一人，得知对方是狼还是好人。</li>
-        <li><b>女巫</b>：拥有一瓶解药（救人）和一瓶毒药（杀人），各限一次；首夜可自救。</li>
-        <li><b>猎人</b>：死亡时可以开枪带走一人（被毒死除外）。</li>
-        <li><b>村民</b>：白天靠推理投票放逐狼人。</li>
-        <li>白天讨论后投票，票数最高者被放逐；平票则无人出局。</li>
-        <li>狼人全灭 → 好人胜利；狼人数 ≥ 好人数 → 狼人胜利。</li>
-        <li><b>联机版提示</b>：狼队无法密聊，每晚各自悄悄投选袭击目标、多数决；行动与身份只发给本人，别偷看别人屏幕哦。</li>
-      </ul>
-    </details>
+      <div class="field">
+        <label for="countSel">总玩家人数<span class="lbl-note">单机含你 / 联机含真人 + AI</span></label>
+        <select id="countSel">
+          <option value="6">6 人</option>
+          <option value="7">7 人</option>
+          <option value="8" selected>8 人（推荐）</option>
+          <option value="9">9 人</option>
+          <option value="10">10 人</option>
+          <option value="11">11 人</option>
+          <option value="12">12 人</option>
+        </select>
+      </div>
+
+      <div class="field">
+        <label>本局角色配置</label>
+        <div id="rolePreview" class="rolepreview"></div>
+      </div>
+
+      <button id="startBtn" class="btn primary big">单机开局<span class="btn-sub">你 + AI</span></button>
+
+      <div class="divider"><span>或 · 真人联机</span></div>
+
+      <div class="btnrow secondary-row">
+        <button id="btnCreate" class="btn ghost">创建房间</button>
+        <button id="btnJoin" class="btn ghost">加入房间</button>
+      </div>
+
+      <div id="joinRow" class="field hidden">
+        <label for="joinCodeInp">输入好友给你的房间号</label>
+        <div class="optrow">
+          <input type="text" id="joinCodeInp" placeholder="例如 WOLF23" maxlength="10" style="flex:1" />
+          <button id="joinBtn" class="btn primary">加入</button>
+        </div>
+        <div class="hint-small">联机走 P2P 直连，无需服务器；首次使用请保证能联网加载联机模块。</div>
+      </div>
+
+      <details class="howto">
+        <summary>玩法速览</summary>
+        <ul>
+          <li><b>狼人</b>：每晚睁眼杀一个人，目标是杀光所有神民。</li>
+          <li><b>预言家</b>：每晚查验一人，得知对方是狼还是好人。</li>
+          <li><b>女巫</b>：拥有一瓶解药（救人）和一瓶毒药（杀人），各限一次；首夜可自救。</li>
+          <li><b>猎人</b>：死亡时可以开枪带走一人（被毒死除外）。</li>
+          <li><b>村民</b>：白天靠推理投票放逐狼人。</li>
+          <li>白天讨论后投票，票数最高者被放逐；平票则无人出局。</li>
+          <li>狼人全灭 → 好人胜利；狼人数 ≥ 好人数 → 狼人胜利。</li>
+          <li><b>联机版提示</b>：狼队无法密聊，每晚各自悄悄投选袭击目标、多数决；行动与身份只发给本人，别偷看别人屏幕哦。</li>
+        </ul>
+      </details>
+    </div>
   </div>
 </section>
 
-<!-- 房间大厅 -->
+<!-- ============================================================
+     房间大厅
+     ============================================================ -->
 <section id="lobby" class="screen hidden">
-  <div class="panel wide">
-    <h2 id="lobbyTitle">房间大厅</h2>
+  <div class="panel wide lobby-panel">
+    <p class="eyebrow">聚集</p>
+    <h2 id="lobbyTitle" class="sec-h">房间大厅</h2>
 
     <div id="hostCodeWrap" class="codebox hidden">
       <div class="sub">把房间号发给好友，输入相同房间号即可加入：</div>
@@ -95,7 +162,7 @@
     </div>
 
     <div id="hostCntWrap" class="field hidden">
-      <label for="mpCountSel">本局总人数（未满的席位将由 AI 补齐）</label>
+      <label for="mpCountSel">本局总人数<span class="lbl-note">未满的席位将由 AI 补齐</span></label>
       <select id="mpCountSel">
         <option value="6">6 人</option>
         <option value="7">7 人</option>
@@ -110,48 +177,74 @@
     <div id="mpStatus" class="mpstatus"></div>
 
     <div class="btnrow">
-      <button id="mpStartBtn" class="btn primary big hidden">🌘 开始游戏</button>
-      <button id="mpReadyBtn" class="btn ok big hidden">🙋 准备</button>
+      <button id="mpStartBtn" class="btn primary big hidden">开始游戏</button>
+      <button id="mpReadyBtn" class="btn ok big hidden">准备</button>
     </div>
-    <button id="mpLeaveBtn" class="btn ghost" style="margin-top:10px;width:100%">🚪 离开房间</button>
+    <button id="mpLeaveBtn" class="btn ghost" style="margin-top:10px;width:100%">离开房间</button>
   </div>
 </section>
 
-<!-- 游戏界面 -->
+<!-- ============================================================
+     游戏界面 —— 圆桌审判
+     ============================================================ -->
 <section id="game" class="screen hidden">
-  <!-- 顶部状态条 -->
   <div class="statusbar">
     <span id="stDay">☀️ 白天</span>
+    <span class="st-sep" aria-hidden="true"></span>
     <span id="stRound">第 1 晚</span>
+    <span class="st-sep" aria-hidden="true"></span>
     <span id="stAlive">存活 8 人</span>
     <span id="stRole"></span>
   </div>
 
-  <!-- 玩家牌桌 -->
-  <div id="table" class="table"></div>
+  <!-- 装饰盘放在 wrapper 内：#table 的 innerHTML 会被 game.js 整体重绘 -->
+  <div class="tablewrap">
+    <div class="ritual-disc" aria-hidden="true">
+      <svg viewBox="0 0 400 400" class="disc-svg">
+        <circle class="disc-ring disc-ring--outer" cx="200" cy="200" r="186"/>
+        <circle class="disc-ring disc-ring--mid"   cx="200" cy="200" r="148"/>
+        <circle class="disc-ring disc-ring--inner" cx="200" cy="200" r="94"/>
+        <g class="disc-ticks"></g>
+        <circle class="disc-moon"     cx="200" cy="200" r="50"/>
+        <circle class="disc-moon-cut" cx="221" cy="187" r="44"/>
+      </svg>
+      <div class="disc-caption"><span class="disc-word">审&nbsp;判</span></div>
+    </div>
+    <div id="table" class="table"></div>
+  </div>
 
-  <!-- 聊天 / 日志区 -->
-  <div id="logBox" class="logbox"><div id="log"></div></div>
+  <!-- 事件卷宗 -->
+  <div class="dossier">
+    <div class="dossier-head">
+      <span class="dossier-title">事件卷宗</span>
+      <span class="dossier-rule" aria-hidden="true"></span>
+    </div>
+    <div id="logBox" class="logbox"><div id="log"></div></div>
+  </div>
 
-  <!-- 操作区 -->
+  <!-- 导演面板 -->
   <div id="action" class="action"></div>
 </section>
 
-<!-- 全屏过场遮罩 -->
-<div id="veil" class="veil hidden"><div class="veilInner" id="veilInner"></div></div>
+<!-- 全屏过场（电影式标题卡） -->
+<div id="veil" class="veil hidden">
+  <div class="veil-bars" aria-hidden="true"><i></i><i></i></div>
+  <div class="veilInner" id="veilInner"></div>
+</div>
 
-<!-- 结算弹窗 -->
+<!-- 结算 -->
 <div id="overlay" class="overlay hidden">
   <div class="modal">
+    <p class="eyebrow ov-eyebrow">终局</p>
     <h2 id="ovTitle"></h2>
     <p id="ovText"></p>
     <div id="ovRoles" class="ovroles"></div>
-    <button id="againBtn" class="btn primary">🔁 再来一局 / 返回</button>
+    <button id="againBtn" class="btn primary">再来一局 / 返回</button>
   </div>
 </div>
 
-<script src="net.js?v=6"></script>
-<script src="game.js?v=6"></script>
-<script src="fx.js?v=6"></script>
+<script src="net.js?v=20"></script>
+<script src="game.js?v=20"></script>
+<script src="fx.js?v=20"></script>
 </body>
 </html>
