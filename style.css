@@ -1,0 +1,421 @@
+/* ===== 全局 ===== */
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+  --bg1: #0b1026;
+  --bg2: #1a1033;
+  --panel: rgba(255, 255, 255, 0.06);
+  --line: rgba(255, 255, 255, 0.14);
+  --gold: #f5c542;
+  --moon: #e8e6f0;
+  --text: #e8e6f0;
+  --muted: #9b97b5;
+  --wolf: #ff5d5d;
+  --good: #59d98d;
+}
+
+html, body { height: 100%; }
+
+body {
+  font-family: "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Segoe UI", sans-serif;
+  background: radial-gradient(1200px 800px at 20% -10%, #1c1440 0%, var(--bg1) 45%, var(--bg2) 100%);
+  color: var(--text);
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+.hidden { display: none !important; }
+
+/* ===== 顶栏 ===== */
+.topbar {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 14px 22px;
+  border-bottom: 1px solid var(--line);
+  backdrop-filter: blur(6px);
+  background: rgba(10, 8, 30, 0.5);
+  position: sticky; top: 0; z-index: 20;
+}
+.title { font-size: 20px; font-weight: 800; letter-spacing: 1px; }
+.badge {
+  background: linear-gradient(135deg, #7c5cff, #4c3bbf);
+  padding: 6px 16px; border-radius: 999px;
+  font-size: 13px; font-weight: 700; box-shadow: 0 0 18px rgba(124, 92, 255, 0.5);
+}
+
+/* ===== 面板 ===== */
+.screen { padding: 24px 18px 60px; max-width: 1080px; margin: 0 auto; }
+
+.panel {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 20px;
+  padding: 34px 28px;
+  text-align: center;
+  max-width: 560px;
+  margin: 6vh auto 0;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.45);
+}
+.panel h1 { font-size: 30px; letter-spacing: 2px; }
+.sub { color: var(--muted); margin: 8px 0 24px; font-size: 14px; }
+
+.field { margin: 18px 0; text-align: left; }
+.field label { display: block; font-size: 14px; color: var(--muted); margin-bottom: 8px; }
+select {
+  width: 100%; padding: 12px 14px; font-size: 16px;
+  background: rgba(255,255,255,0.08); color: var(--text);
+  border: 1px solid var(--line); border-radius: 12px; outline: none;
+}
+select:focus { border-color: var(--gold); }
+
+.rolepreview {
+  display: flex; flex-wrap: wrap; gap: 8px; justify-content: center;
+  margin: 14px 0 22px; font-size: 13px;
+}
+.rolepreview span {
+  background: rgba(255,255,255,0.08); border: 1px solid var(--line);
+  padding: 4px 12px; border-radius: 999px; color: var(--muted);
+}
+
+.btn {
+  border: none; cursor: pointer; font-weight: 700;
+  padding: 10px 20px; border-radius: 12px; font-size: 14px;
+  color: #fff; background: #3d3563; transition: 0.15s;
+}
+.btn:hover { filter: brightness(1.15); transform: translateY(-1px); }
+.btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+.btn.primary {
+  background: linear-gradient(135deg, #7c5cff, #5b3fd8);
+  box-shadow: 0 6px 20px rgba(124,92,255,0.4);
+}
+.btn.big { width: 100%; padding: 14px; font-size: 17px; margin-top: 6px; }
+.btn.danger { background: linear-gradient(135deg, #ff6a6a, #d83f4e); }
+.btn.ok { background: linear-gradient(135deg, #3ecf7a, #24a45d); }
+.btn.ghost { background: rgba(255,255,255,0.1); }
+.btn.mini { padding: 5px 12px; font-size: 12px; }
+
+.howto { margin-top: 22px; text-align: left; }
+.howto summary { cursor: pointer; color: var(--gold); font-size: 14px; font-weight: 600; }
+.howto ul { margin: 12px 0 0 20px; color: var(--muted); font-size: 13px; line-height: 1.9; }
+.howto b { color: var(--text); }
+
+/* ===== 状态条 ===== */
+.statusbar {
+  display: flex; flex-wrap: wrap; gap: 10px; align-items: center;
+  padding: 12px 18px; margin-bottom: 14px;
+  background: var(--panel); border: 1px solid var(--line); border-radius: 14px;
+  font-size: 14px; font-weight: 600;
+}
+.statusbar .sep { color: var(--muted); }
+#stRole { color: var(--gold); margin-left: auto; }
+
+/* ===== 牌桌 ===== */
+.table {
+  display: grid; gap: 12px;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  margin-bottom: 16px;
+}
+
+.card {
+  position: relative;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  padding: 14px 10px;
+  text-align: center;
+  transition: 0.2s;
+  animation: pop 0.3s ease;
+}
+@keyframes pop { from { transform: scale(0.9); opacity: 0; } }
+.card.human { border-color: var(--gold); box-shadow: 0 0 16px rgba(245,197,66,0.25); }
+.card.dead { opacity: 0.45; filter: grayscale(0.8); }
+.card.dead::after {
+  content: "☠️"; position: absolute; inset: 0;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 40px; opacity: 0.9;
+}
+.card .avatar {
+  font-size: 34px; line-height: 1; margin-bottom: 8px;
+}
+.card .nm { font-weight: 700; font-size: 15px; margin-bottom: 6px; }
+.card .meta { font-size: 12px; color: var(--muted); min-height: 16px; }
+.card .meta b { color: var(--text); }
+.card .tag {
+  display: inline-block; margin-top: 8px; font-size: 12px; font-weight: 700;
+  padding: 3px 10px; border-radius: 999px;
+}
+.card .tag.wolf { background: rgba(255,93,93,0.18); color: var(--wolf); }
+.card .tag.good { background: rgba(89,217,141,0.15); color: var(--good); }
+.card .tag.info { background: rgba(124,92,255,0.2); color: #b7a7ff; }
+.card .tag.hint { background: rgba(245,197,66,0.18); color: var(--gold); }
+.card.playing { border-color: var(--gold); box-shadow: 0 0 0 2px rgba(245,197,66,0.5); animation: glow 1.2s infinite; }
+@keyframes glow { 50% { box-shadow: 0 0 22px rgba(245,197,66,0.8); } }
+
+/* ===== 日志 ===== */
+.logbox {
+  background: rgba(0,0,0,0.35);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  height: 200px;
+  overflow-y: auto;
+  padding: 12px 16px;
+  margin-bottom: 14px;
+}
+#log { font-size: 14px; line-height: 1.85; }
+.logline { animation: slidein 0.2s ease; }
+@keyframes slidein { from { transform: translateX(-8px); opacity: 0; } }
+.logline .who { font-weight: 700; }
+.logline.night { color: #b9a6ff; }
+.logline.day { color: #ffe9a8; }
+.logline.dead { color: var(--wolf); }
+.logline.win { color: var(--good); font-weight: 800; }
+.logline.sys { color: var(--muted); font-style: italic; }
+
+/* ===== 操作区 ===== */
+.action {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 14px;
+  min-height: 60px;
+}
+.action .atitle { font-size: 15px; font-weight: 800; margin-bottom: 12px; }
+.action .hint { font-size: 13px; color: var(--muted); margin-bottom: 10px; }
+.optrow { display: flex; flex-wrap: wrap; gap: 10px; }
+.optgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 8px; }
+
+input[type="text"] {
+  width: 100%; padding: 12px 14px; font-size: 15px;
+  background: rgba(255,255,255,0.08); color: var(--text);
+  border: 1px solid var(--line); border-radius: 12px; outline: none;
+}
+input[type="text"]:focus { border-color: var(--gold); }
+
+/* ===== 过场遮罩 ===== */
+.veil {
+  position: fixed; inset: 0; z-index: 50;
+  background: rgba(2, 2, 12, 0.88);
+  display: flex; align-items: center; justify-content: center;
+  animation: fadein 0.6s ease;
+}
+@keyframes fadein { from { opacity: 0; } }
+.veilInner {
+  font-size: 56px; font-weight: 900; letter-spacing: 6px;
+  color: var(--gold);
+  text-shadow: 0 0 40px rgba(245,197,66,0.6);
+  animation: breathe 2s infinite;
+}
+.veilInner.day { color: #ffe9a8; text-shadow: 0 0 40px rgba(255,233,168,0.5); }
+.veilInner.wolf { color: var(--wolf); text-shadow: 0 0 40px rgba(255,93,93,0.5); }
+@keyframes breathe { 50% { transform: scale(1.04); opacity: 0.9; } }
+
+/* ===== 结算弹窗 ===== */
+.overlay {
+  position: fixed; inset: 0; z-index: 60;
+  background: rgba(2,2,12,0.82);
+  display: flex; align-items: center; justify-content: center;
+  padding: 20px;
+}
+.modal {
+  background: linear-gradient(160deg, #1b1240, #0d0a24);
+  border: 1px solid var(--line); border-radius: 22px;
+  padding: 34px 30px; max-width: 480px; width: 100%;
+  text-align: center; box-shadow: 0 30px 90px rgba(0,0,0,0.6);
+}
+.modal h2 { font-size: 30px; margin-bottom: 10px; }
+.modal p { color: var(--muted); font-size: 15px; margin-bottom: 20px; }
+.ovroles {
+  display: flex; flex-wrap: wrap; gap: 8px; justify-content: center;
+  margin-bottom: 22px; max-height: 220px; overflow-y: auto;
+}
+.ovroles span {
+  background: rgba(255,255,255,0.08); border: 1px solid var(--line);
+  padding: 6px 12px; border-radius: 10px; font-size: 13px;
+}
+.ovroles span.w { color: var(--wolf); border-color: rgba(255,93,93,0.4); }
+.ovroles span.g { color: var(--good); border-color: rgba(89,217,141,0.3); }
+
+/* ===== 联机 / 大厅 ===== */
+.panel.wide { max-width: 620px; }
+.btnrow { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; }
+.btnrow .btn { flex: 1; min-width: 130px; }
+.divider {
+  display: flex; align-items: center; gap: 12px;
+  color: var(--muted); font-size: 13px; margin: 20px 0 14px;
+}
+.divider::before, .divider::after { content: ""; flex: 1; height: 1px; background: var(--line); }
+
+.codebox {
+  background: rgba(255,255,255,0.04); border: 1px dashed var(--line);
+  border-radius: 14px; padding: 14px; margin: 12px 0;
+}
+.roomcode {
+  font-family: "SF Mono", Menlo, Consolas, monospace;
+  font-size: 42px; font-weight: 900; letter-spacing: 10px;
+  color: var(--gold); text-align: center;
+  text-shadow: 0 0 26px rgba(245,197,66,0.45);
+  padding: 6px 0 2px;
+  user-select: all;
+}
+
+.roster { display: flex; flex-direction: column; gap: 8px; }
+.roster-empty { color: var(--muted); font-size: 13px; text-align: center; padding: 8px; }
+.roster-row {
+  display: flex; align-items: center; gap: 10px;
+  background: rgba(255,255,255,0.06); border: 1px solid var(--line);
+  padding: 9px 14px; border-radius: 12px; font-size: 14px;
+}
+.roster-row .ricon { font-size: 17px; }
+.roster-row .rname { font-weight: 700; flex: 1; text-align: left; }
+.roster-row .rtag { font-size: 12px; font-weight: 700; padding: 3px 10px; border-radius: 999px; }
+.roster-row .rtag.host { background: rgba(245,197,66,0.16); color: var(--gold); }
+.roster-row .rtag.ready { background: rgba(89,217,141,0.14); color: var(--good); }
+.roster-row .rtag.wait { background: rgba(255,255,255,0.09); color: var(--muted); }
+
+.mpstatus { font-size: 13px; color: var(--muted); margin: 12px 0 4px; min-height: 18px; }
+.hint-small { font-size: 12px; color: var(--muted); margin-top: 8px; }
+
+/* ============================================================
+ * 视觉增强层（配合 fx.js）——纯附加，不覆盖既有布局
+ * ============================================================ */
+
+/* 氛围画布：置于背景之上、内容之下。
+ * width/height 必须显式写出：canvas 属于替换元素，只有 inset:0 时会退回固有
+ * 尺寸（= DPR 放大后的缓冲区），在 2x 屏上会撑成视口的两倍宽高。*/
+#fxCanvas {
+  position: fixed; inset: 0;
+  width: 100%; height: 100%;
+  z-index: 0; pointer-events: none;
+}
+.screen { position: relative; z-index: 1; }
+
+/* 边缘压暗，把视线收拢到牌桌中心 */
+body::after {
+  content: ""; position: fixed; inset: 0; z-index: 1;
+  pointer-events: none;
+  background: radial-gradient(120% 90% at 50% 45%, transparent 55%, rgba(2, 2, 12, 0.55) 100%);
+}
+
+/* ===== 面板：昼夜微调 + 入场 ===== */
+.panel {
+  animation: panelIn 0.5s cubic-bezier(0.22, 0.8, 0.24, 1) both;
+  transition: border-color 0.8s ease, box-shadow 0.8s ease;
+}
+@keyframes panelIn {
+  from { transform: translateY(14px) scale(0.985); opacity: 0; }
+}
+html[data-phase="day"] .panel { border-color: rgba(255, 214, 140, 0.20); }
+html[data-phase="night"] .panel { border-color: rgba(150, 160, 255, 0.16); }
+
+/* 状态条随昼夜换色 */
+.statusbar { transition: border-color 0.8s ease, background 0.8s ease; }
+html[data-phase="day"] .statusbar { border-color: rgba(255, 214, 140, 0.22); }
+
+/* ===== 玩家牌：悬停抬起 + 内部高光扫过 ===== */
+.card {
+  overflow: hidden;
+  transition: transform 0.22s cubic-bezier(0.22, 0.8, 0.24, 1),
+              box-shadow 0.22s ease, border-color 0.22s ease;
+}
+.card:not(.dead):hover {
+  transform: translateY(-4px);
+  border-color: rgba(245, 197, 66, 0.45);
+  box-shadow: 0 12px 30px -8px rgba(0, 0, 0, 0.6), 0 0 22px rgba(245, 197, 66, 0.18);
+}
+.card::before {
+  content: ""; position: absolute; inset: 0;
+  background: linear-gradient(115deg, transparent 35%, rgba(255, 255, 255, 0.10) 50%, transparent 65%);
+  transform: translateX(-120%);
+  transition: transform 0.7s ease;
+  pointer-events: none;
+}
+.card:not(.dead):hover::before { transform: translateX(120%); }
+
+/* 发言中：旋转光环，比原来的呼吸更明确 */
+.card.playing::after {
+  content: ""; position: absolute; inset: -1px;
+  border-radius: inherit; padding: 1px;
+  background: conic-gradient(from 0deg, transparent, var(--gold), transparent 40%);
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor; mask-composite: exclude;
+  animation: ringSpin 1.8s linear infinite;
+  pointer-events: none;
+}
+@keyframes ringSpin { to { transform: rotate(1turn); } }
+
+/* 死亡：下沉 + 褪色（fx.js 负责同一时刻的灰烬粒子） */
+.card.fx-die { animation: cardDie 0.65s cubic-bezier(0.3, 0.7, 0.3, 1) both; }
+@keyframes cardDie {
+  30% { transform: translateY(-6px) rotate(-1.5deg); }
+  100% { transform: translateY(6px) rotate(1deg); }
+}
+
+/* 牌桌整体抖动（有人出局时） */
+.fx-shake { animation: fxShake 0.5s cubic-bezier(0.36, 0.07, 0.19, 0.97); }
+@keyframes fxShake {
+  10%, 90% { transform: translateX(-2px); }
+  20%, 80% { transform: translateX(3px); }
+  30%, 50%, 70% { transform: translateX(-5px); }
+  40%, 60% { transform: translateX(5px); }
+}
+
+/* ===== 按钮：悬停时一道光扫过 ===== */
+.btn { position: relative; overflow: hidden; }
+.btn::after {
+  content: ""; position: absolute; inset: 0;
+  background: linear-gradient(115deg, transparent 40%, rgba(255, 255, 255, 0.28) 50%, transparent 60%);
+  transform: translateX(-130%);
+  transition: transform 0.6s ease;
+}
+.btn:not(:disabled):hover::after { transform: translateX(130%); }
+.btn:not(:disabled):active { transform: translateY(1px) scale(0.99); }
+
+/* ===== 过场遮罩：文字聚焦浮现 + 背后光晕 ===== */
+.veil { backdrop-filter: blur(3px); }
+.veilInner {
+  position: relative;
+  animation: breathe 2s infinite, veilIn 0.55s cubic-bezier(0.22, 0.8, 0.24, 1) both;
+}
+@keyframes veilIn {
+  from { opacity: 0; filter: blur(14px); letter-spacing: 26px; transform: scale(1.06); }
+}
+.veilInner::before {
+  content: ""; position: absolute; left: 50%; top: 50%;
+  width: min(70vw, 520px); aspect-ratio: 1; transform: translate(-50%, -50%);
+  border-radius: 50%; z-index: -1;
+  background: radial-gradient(circle, currentColor 0%, transparent 62%);
+  opacity: 0.16;
+  animation: haloPulse 2.4s ease-in-out infinite;
+}
+@keyframes haloPulse { 50% { opacity: 0.28; transform: translate(-50%, -50%) scale(1.12); } }
+
+/* ===== 日志：关键行高亮 ===== */
+.logline { transition: background 0.3s ease; border-radius: 6px; padding: 0 4px; }
+.logline.dead { background: linear-gradient(90deg, rgba(255, 93, 93, 0.13), transparent 70%); }
+.logline.win  { background: linear-gradient(90deg, rgba(89, 217, 141, 0.16), transparent 70%); }
+.logline.night { background: linear-gradient(90deg, rgba(150, 140, 255, 0.09), transparent 70%); }
+
+/* ===== 结算弹窗：登场 ===== */
+.modal { animation: modalIn 0.45s cubic-bezier(0.22, 0.8, 0.24, 1) both; }
+@keyframes modalIn { from { transform: translateY(20px) scale(0.95); opacity: 0; } }
+.modal h2 { animation: veilIn 0.6s cubic-bezier(0.22, 0.8, 0.24, 1) 0.1s both; }
+
+/* 房间号：呼吸光 */
+.roomcode { animation: codeGlow 2.6s ease-in-out infinite; }
+@keyframes codeGlow {
+  50% { text-shadow: 0 0 40px rgba(245, 197, 66, 0.75); }
+}
+
+/* ===== 无障碍：尊重系统的"减少动态效果" ===== */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+  .card::before, .btn::after { display: none; }
+}
+
+/* 已出现过的卡不再重播入场动画：#table 每次整体重绘，否则全桌会不停 pop。
+ * 必须排除 .fx-die：两条规则特异度相同，靠源码顺序决胜，
+ * 不加 :not() 的话这条会把死亡动画一并压掉。*/
+.card.fx-seen:not(.fx-die) { animation: none; }

@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>🌙 网页狼人杀</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🌙</text></svg>">
+<link rel="stylesheet" href="style.css?v=6" />
+</head>
+<body>
+
+<!-- 顶栏 -->
+<header class="topbar">
+  <div class="title">🌕 网页狼人杀</div>
+  <div id="phaseBadge" class="badge">准备中</div>
+</header>
+
+<!-- 主菜单 / 设置界面 -->
+<section id="setup" class="screen">
+  <div class="panel">
+    <h1>🐺 天黑请闭眼</h1>
+    <p class="sub">单机人机 or 同房间号真人联机 · 身份随机发放</p>
+
+    <div class="field">
+      <label for="nameInp">你的昵称</label>
+      <input type="text" id="nameInp" placeholder="例如：狼王小白" maxlength="12" />
+    </div>
+
+    <div class="field">
+      <label for="countSel">总玩家人数（单机含你 / 联机含真人 + AI）</label>
+      <select id="countSel">
+        <option value="6">6 人</option>
+        <option value="7">7 人</option>
+        <option value="8" selected>8 人（推荐）</option>
+        <option value="9">9 人</option>
+        <option value="10">10 人</option>
+        <option value="11">11 人</option>
+        <option value="12">12 人</option>
+      </select>
+    </div>
+
+    <div id="rolePreview" class="rolepreview"></div>
+
+    <button id="startBtn" class="btn primary big">🎮 单机开局（你 + AI）</button>
+
+    <div class="divider"><span>或 · 真人联机</span></div>
+
+    <div class="btnrow">
+      <button id="btnCreate" class="btn primary">🌐 创建房间</button>
+      <button id="btnJoin" class="btn ghost">🔑 加入房间</button>
+    </div>
+
+    <div id="joinRow" class="field hidden">
+      <label for="joinCodeInp">输入好友给你的房间号</label>
+      <div class="optrow">
+        <input type="text" id="joinCodeInp" placeholder="例如 WOLF23" maxlength="10" style="flex:1" />
+        <button id="joinBtn" class="btn primary">加入</button>
+      </div>
+      <div class="hint" style="font-size:12px;color:var(--muted)">联机走 P2P 直连，无需服务器；首次使用请保证能联网加载联机模块。</div>
+    </div>
+
+    <details class="howto">
+      <summary>玩法速览（点击展开）</summary>
+      <ul>
+        <li><b>狼人</b>：每晚睁眼杀一个人，目标是杀光所有神民。</li>
+        <li><b>预言家</b>：每晚查验一人，得知对方是狼还是好人。</li>
+        <li><b>女巫</b>：拥有一瓶解药（救人）和一瓶毒药（杀人），各限一次；首夜可自救。</li>
+        <li><b>猎人</b>：死亡时可以开枪带走一人（被毒死除外）。</li>
+        <li><b>村民</b>：白天靠推理投票放逐狼人。</li>
+        <li>白天讨论后投票，票数最高者被放逐；平票则无人出局。</li>
+        <li>狼人全灭 → 好人胜利；狼人数 ≥ 好人数 → 狼人胜利。</li>
+        <li><b>联机版提示</b>：狼队无法密聊，每晚各自悄悄投选袭击目标、多数决；行动与身份只发给本人，别偷看别人屏幕哦。</li>
+      </ul>
+    </details>
+  </div>
+</section>
+
+<!-- 房间大厅 -->
+<section id="lobby" class="screen hidden">
+  <div class="panel wide">
+    <h2 id="lobbyTitle">房间大厅</h2>
+
+    <div id="hostCodeWrap" class="codebox hidden">
+      <div class="sub">把房间号发给好友，输入相同房间号即可加入：</div>
+      <div id="roomCodeTxt" class="roomcode"></div>
+    </div>
+
+    <div id="clientWait" class="codebox hidden">
+      <div class="sub">已进入房间，等待房主开始游戏…</div>
+    </div>
+
+    <div class="field">
+      <label>玩家列表</label>
+      <div id="mpRoster" class="roster"><div class="roster-empty">…</div></div>
+    </div>
+
+    <div id="hostCntWrap" class="field hidden">
+      <label for="mpCountSel">本局总人数（未满的席位将由 AI 补齐）</label>
+      <select id="mpCountSel">
+        <option value="6">6 人</option>
+        <option value="7">7 人</option>
+        <option value="8" selected>8 人（推荐）</option>
+        <option value="9">9 人</option>
+        <option value="10">10 人</option>
+        <option value="11">11 人</option>
+        <option value="12">12 人</option>
+      </select>
+    </div>
+
+    <div id="mpStatus" class="mpstatus"></div>
+
+    <div class="btnrow">
+      <button id="mpStartBtn" class="btn primary big hidden">🌘 开始游戏</button>
+      <button id="mpReadyBtn" class="btn ok big hidden">🙋 准备</button>
+    </div>
+    <button id="mpLeaveBtn" class="btn ghost" style="margin-top:10px;width:100%">🚪 离开房间</button>
+  </div>
+</section>
+
+<!-- 游戏界面 -->
+<section id="game" class="screen hidden">
+  <!-- 顶部状态条 -->
+  <div class="statusbar">
+    <span id="stDay">☀️ 白天</span>
+    <span id="stRound">第 1 晚</span>
+    <span id="stAlive">存活 8 人</span>
+    <span id="stRole"></span>
+  </div>
+
+  <!-- 玩家牌桌 -->
+  <div id="table" class="table"></div>
+
+  <!-- 聊天 / 日志区 -->
+  <div id="logBox" class="logbox"><div id="log"></div></div>
+
+  <!-- 操作区 -->
+  <div id="action" class="action"></div>
+</section>
+
+<!-- 全屏过场遮罩 -->
+<div id="veil" class="veil hidden"><div class="veilInner" id="veilInner"></div></div>
+
+<!-- 结算弹窗 -->
+<div id="overlay" class="overlay hidden">
+  <div class="modal">
+    <h2 id="ovTitle"></h2>
+    <p id="ovText"></p>
+    <div id="ovRoles" class="ovroles"></div>
+    <button id="againBtn" class="btn primary">🔁 再来一局 / 返回</button>
+  </div>
+</div>
+
+<script src="net.js?v=6"></script>
+<script src="game.js?v=6"></script>
+<script src="fx.js?v=6"></script>
+</body>
+</html>
