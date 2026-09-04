@@ -284,7 +284,7 @@
       /* 用挂钟而非逐帧累加：标签页被切走 / rAF 被节流时，
          回来后能立刻补齐进度，不会永远冻在半溶解状态 */
       trans.p = (performance.now() - trans.t0) / 900;   // 主转场 ≈900ms
-      if (trans.p >= 1) { trans.p = 1; phaseT = trans.to; trans = null; }
+      if (trans.p >= 1) { trans.p = 1; phaseT = trans.to; trans = null; skyKey = null; }
     } else if (Math.abs(phaseTarget - phaseT) > 0.001) {
       phaseT += (phaseTarget - phaseT) * 0.05;
     }
@@ -379,6 +379,10 @@
   function readPhase() {
     const game = $('game');
     if (!game || game.classList.contains('hidden')) return 'night';  // 菜单/大厅恒为夜
+    /* 结算即终局：必须收回夜色。否则白天结束的那局会把根色板永远停在骨白，
+     * 结算遮罩盖不到的地方（顶栏一带）就会露出一条白底。 */
+    const ov = $('overlay');
+    if (ov && !ov.classList.contains('hidden')) return 'night';
     const txt = $('stDay')?.textContent || '';
     if (txt.includes('白天')) return 'day';
     return 'night';
@@ -565,6 +569,7 @@
   const overlay = $('overlay');
   if (overlay) {
     new MutationObserver(() => {
+      syncPhase();                       // 结算开/关都要重算相位
       if (overlay.classList.contains('hidden')) {
         setCls(overlay, 'fx-win-wolf', false);
         setCls(overlay, 'fx-win-good', false);
@@ -612,10 +617,20 @@
   if (REDUCE) {
     draw();
   } else {
+    draw();                    // 先同步画一帧，避免"画布还没画、露出根背景"的空窗
     raf = requestAnimationFrame(loop);
+    /* rAF 被暂停（切标签页 / 窗口失焦 / 节流）时画面会冻在半溶解帧，
+     * 回来后必须立刻补齐：结束过期转场并重画。 */
+    const revive = () => {
+      if (trans && performance.now() - trans.t0 >= 900) { phaseT = trans.to; trans = null; skyKey = null; }
+      step(16); draw();
+      if (!raf) { last = performance.now(); raf = requestAnimationFrame(loop); }
+    };
     document.addEventListener('visibilitychange', () => {
       if (document.hidden) { if (raf) cancelAnimationFrame(raf); raf = null; }
-      else if (!raf) { last = performance.now(); raf = requestAnimationFrame(loop); }
+      else revive();
     });
+    addEventListener('focus', revive);
+    addEventListener('pageshow', revive);
   }
 })();
