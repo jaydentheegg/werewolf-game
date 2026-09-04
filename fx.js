@@ -600,12 +600,15 @@
    * 收 pointerdown，并同时支持键盘，且卡片一旦关闭就不再因重复日志重开。 */
   let idStage = null, idTimer = 0, idShown = false;
 
+  const ID_DISMISS_EVENTS = ['pointerdown', 'mousedown', 'touchstart', 'click'];
   function hideIdCard() {
+    /* 先按 DOM 实际情况清场，再看内部状态：
+     * 若两者曾经失步（状态已置空但节点仍在），这里也能把残留节点清掉。 */
+    document.querySelectorAll('.idcard-stage').forEach((n) => n.remove());
     if (!idStage) return;
-    document.removeEventListener('pointerdown', hideIdCard, true);
+    ID_DISMISS_EVENTS.forEach((t) => document.removeEventListener(t, hideIdCard, true));
     document.removeEventListener('keydown', onIdKey, true);
     clearTimeout(idTimer);
-    idStage.remove();
     idStage = null;
   }
   function onIdKey(e) {
@@ -633,8 +636,10 @@
        </div>`;
     document.body.appendChild(idStage);
 
-    /* 捕获阶段挂在 document 上：无论命中的是哪个元素都能关掉 */
-    document.addEventListener('pointerdown', hideIdCard, true);
+    /* 捕获阶段挂在 document 上：无论命中的是哪个元素都能关掉。
+     * 同时监听 mousedown/touchstart/click —— 某些环境下 pointerdown
+     * 可能被上层组件吞掉或不受支持，多一条路就少一种卡死的可能。 */
+    ID_DISMISS_EVENTS.forEach((t) => document.addEventListener(t, hideIdCard, true));
     document.addEventListener('keydown', onIdKey, true);
 
     FX.flash(meta.camp === 'wolf' ? [142, 20, 32] : [184, 145, 80], 0.4);
