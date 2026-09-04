@@ -424,7 +424,7 @@
   });
   const gameEl = $('game');
   if (gameEl) new MutationObserver(() => {
-    if (gameEl.classList.contains('hidden')) veilPhase = null;   // 回到菜单：清掉上一局的相位
+    if (gameEl.classList.contains('hidden')) { veilPhase = null; idShown = false; }  // 回到菜单：重置相位与身份卡
     syncPhase();
   }).observe(gameEl, { attributes: true, attributeFilter: ['class'] });
   applyPhase();
@@ -594,28 +594,49 @@
   /* ============================================================
    * 七、日志：关键事件 + 身份揭示卡
    * ============================================================ */
-  let idStage = null, idTimer = 0;
+  /* 身份揭示卡。
+   * 关闭必须绝对可靠：只把监听挂在卡片自身上是不够的——一旦有任何元素
+   * 压在它上面，点击就再也到不了这张卡。因此改为在 document 捕获阶段
+   * 收 pointerdown，并同时支持键盘，且卡片一旦关闭就不再因重复日志重开。 */
+  let idStage = null, idTimer = 0, idShown = false;
+
   function hideIdCard() {
     if (!idStage) return;
-    idStage.remove(); idStage = null;
+    document.removeEventListener('pointerdown', hideIdCard, true);
+    document.removeEventListener('keydown', onIdKey, true);
     clearTimeout(idTimer);
+    idStage.remove();
+    idStage = null;
   }
+  function onIdKey(e) {
+    if (e.key === 'Escape' || e.key === 'Enter' || e.key === ' ' || e.key === 'Spacebar') {
+      e.preventDefault();
+      hideIdCard();
+    }
+  }
+
   function showIdCard(role) {
     const meta = ROLE_META[role];
-    if (!meta || idStage) return;
+    if (!meta || idStage || idShown) return;   // 一局只发一次，避免重复日志把卡再顶出来
+    idShown = true;
     idStage = document.createElement('div');
     idStage.className = 'idcard-stage';
+    idStage.setAttribute('role', 'dialog');
+    idStage.setAttribute('aria-label', `你的身份：${meta.name}`);
     idStage.innerHTML =
       `<div class="idcard" data-camp="${meta.camp}">
          ${sigilSVG(role)}
          <div class="idcard-name">${meta.name}</div>
          <div class="idcard-camp">${meta.campName}</div>
          <div class="idcard-desc">${meta.desc}</div>
-         <div class="idcard-tip">点击任意处继续</div>
+         <div class="idcard-tip">点击任意处 / 按任意键继续</div>
        </div>`;
-    /* 任何点击都能立刻跳过，绝不挡住操作 */
-    idStage.addEventListener('click', hideIdCard);
     document.body.appendChild(idStage);
+
+    /* 捕获阶段挂在 document 上：无论命中的是哪个元素都能关掉 */
+    document.addEventListener('pointerdown', hideIdCard, true);
+    document.addEventListener('keydown', onIdKey, true);
+
     FX.flash(meta.camp === 'wolf' ? [142, 20, 32] : [184, 145, 80], 0.4);
     idTimer = setTimeout(hideIdCard, REDUCE ? 900 : 2600);
   }

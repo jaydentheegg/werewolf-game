@@ -277,7 +277,9 @@ input::placeholder { color: color-mix(in srgb, var(--muted) 75%, transparent); }
  * 注意：<use> 会生成影子树，`.sigil .sig-cut` 这类后代选择器进不去。
  * 镂空色只能靠"可继承的自定义属性 + symbol 内联 style"传递；
  * 描边则写成 currentColor 呈现属性，同样可以穿透。 */
-.sigil { display: block; color: currentColor; --sig-cut: var(--bg); }
+/* fill 必须显式声明：SVG 的默认填充是黑色，只设 color 不会让图形变色。
+ * fill 可继承进 <use> 影子树，而 .sig-cut 有自己的内联 fill，镂空不受影响。 */
+.sigil { display: block; fill: currentColor; --sig-cut: var(--bg); }
 /* 卡面 / 徽章有自己的底色，镂空要跟着它走 */
 .card .sigil { --sig-cut: #0b0c11; }
 html[data-phase="day"] .card .sigil { --sig-cut: #d3cec2; }
@@ -646,8 +648,13 @@ html[data-phase="day"] .logbox { background: rgba(252, 250, 245, 0.82); }
   position: fixed; inset: 0; z-index: 65;
   display: flex; align-items: center; justify-content: center;
   background: radial-gradient(circle at 50% 45%, rgba(10,9,14,0.86), rgba(3,3,5,0.96));
-  animation: veilBg 360ms var(--ease) both;
+  cursor: pointer;
+  /* 基础态就是可见：若动画因任何原因没有运行，绝不能停在
+   * "透明但仍全屏拦截点击"的状态上。关键帧只负责淡入。 */
+  opacity: 1;
+  animation: idStageIn 360ms var(--ease);
 }
+@keyframes idStageIn { from { opacity: 0; } to { opacity: 1; } }
 .idcard {
   position: relative; width: min(84vw, 292px); aspect-ratio: 3 / 4.3;
   border: 1px solid color-mix(in srgb, var(--gold) 55%, transparent);
