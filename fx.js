@@ -432,12 +432,72 @@
   /* ============================================================
    * 五、过场遮罩
    * ============================================================ */
+  /* —— 角色行动圣像徽章 ——
+   * 运动语言参考 santionispirits.com：三层同心圆环分速旋转 + 主体经遮罩揭示，
+   * 触发式播放一次。这里用原生 SVG + CSS 复刻，图形全部是本项目自有的 sigil。
+   * 只在"某个角色正在行动"的时刻出现，普通阶段卡不放。 */
+  const ACTING = [
+    { re: /狼人睁眼|你是狼人/, role: 'wolf'   },
+    { re: /预言家睁眼|查到了/, role: 'seer'   },
+    { re: /女巫睁眼/,          role: 'witch'  },
+    /* 猎人在当前 game.js 里没有全屏遮罩时刻（只有日志行和 #action 标题），
+     * 这条规则因此暂时不会命中；保留是为了将来若加了猎人过场即可自动生效。 */
+    { re: /猎人睁眼|发动猎人技能/, role: 'hunter' },
+  ];
+  function roleFromActingText(txt) {
+    if (!txt) return null;
+    const hit = ACTING.find((a) => a.re.test(txt));
+    return hit ? hit.role : null;
+  }
+
+  function medallionEl(role) {
+    const wrap = document.createElement('div');
+    wrap.className = 'medallion';
+    wrap.dataset.role = role;
+    /* 光芒：绕圈的放射细线，长短交替 */
+    let rays = '';
+    for (let i = 0; i < 36; i++) {
+      const a = (i / 36) * Math.PI * 2;
+      const r1 = 74, r2 = i % 3 === 0 ? 86 : 80;
+      rays += `<line x1="${(100 + Math.cos(a) * r1).toFixed(1)}" y1="${(100 + Math.sin(a) * r1).toFixed(1)}"` +
+              ` x2="${(100 + Math.cos(a) * r2).toFixed(1)}" y2="${(100 + Math.sin(a) * r2).toFixed(1)}"/>`;
+    }
+    wrap.innerHTML =
+      `<svg viewBox="0 0 200 200" aria-hidden="true">
+         <g class="med-outer"><circle class="med-ring" pathLength="100" cx="100" cy="100" r="92"/></g>
+         <g class="med-rays">${rays}</g>
+         <g class="med-mid"><circle class="med-ring" pathLength="100" cx="100" cy="100" r="66"/></g>
+         <g class="med-inner"><circle class="med-ring med-ring--dash" pathLength="100" cx="100" cy="100" r="52"/></g>
+         <g class="med-figure"><use href="#sig-${role}" width="32" height="32" transform="translate(68 68) scale(2)"/></g>
+       </svg>`;
+    return wrap;
+  }
+
+  let medTimer = 0;
+  function clearMedallion() {
+    clearTimeout(medTimer);
+    veil?.querySelector('.medallion')?.remove();
+    veil?.classList.remove('has-medallion');
+  }
+  function showMedallion(role) {
+    if (!veil) return;
+    clearMedallion();
+    const el = medallionEl(role);
+    veil.insertBefore(el, veil.firstChild);
+    veil.classList.add('has-medallion');
+  }
+
   const veil = $('veil'), veilInner = $('veilInner');
   if (veil) {
     new MutationObserver(() => {
-      if (veil.classList.contains('hidden')) return;
-      const p = phaseFromVeilText(veilInner?.textContent || '');
+      if (veil.classList.contains('hidden')) { clearMedallion(); return; }
+      const txt = veilInner?.textContent || '';
+      const p = phaseFromVeilText(txt);
       if (p && p !== veilPhase) { veilPhase = p; syncPhase(); }
+
+      const role = roleFromActingText(txt);
+      if (role) showMedallion(role); else clearMedallion();
+
       const c = veilInner?.className || '';
       const isWolf = c.includes('wolf');
       const color = isWolf ? [192, 52, 47] : c.includes('day') ? [212, 130, 70] : [184, 145, 80];
