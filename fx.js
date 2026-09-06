@@ -477,18 +477,14 @@
     return wrap;
   }
 
-  let medTimer = 0;
   function clearMedallion() {
-    clearTimeout(medTimer);
     veil?.querySelector('.medallion')?.remove();
-    veil?.classList.remove('has-medallion');
   }
   function showMedallion(role) {
     if (!veil) return;
     clearMedallion();
     const el = medallionEl(role);
     veil.insertBefore(el, veil.firstChild);
-    veil.classList.add('has-medallion');
   }
 
   const veil = $('veil'), veilInner = $('veilInner');
