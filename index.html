@@ -6,7 +6,7 @@
 <title>天黑，请闭眼 · 狼人杀</title>
 <meta name="theme-color" content="#07070a" />
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' fill='%2307070a'/><circle cx='50' cy='44' r='24' fill='%23e8e2d6'/><circle cx='62' cy='36' r='21' fill='%2307070a'/></svg>">
-<link rel="stylesheet" href="style.css?v=31" />
+<link rel="stylesheet" href="style.css?v=32" />
 </head>
 <body>
 
@@ -259,9 +259,22 @@
   </div>
 </div>
 
-<script src="net.js?v=31"></script>
-<script src="game.js?v=31"></script>
-<script src="compose.js?v=31"></script>
-<script src="fx.js?v=31"></script>
+<!-- 身份揭示：保持为静态 DOM，避免运行时注入节点与事件绑定失步 -->
+<div id="identityOverlay" class="idcard-stage hidden" role="dialog" aria-modal="true"
+     aria-labelledby="identityName" aria-describedby="identityDesc">
+  <div id="identityCard" class="idcard" data-camp="good">
+    <div id="identitySigil" class="idcard-sigil" aria-hidden="true"></div>
+    <div id="identityName" class="idcard-name"></div>
+    <div id="identityCamp" class="idcard-camp"></div>
+    <div id="identityDesc" class="idcard-desc"></div>
+    <button id="identityContinue" class="idcard-continue" type="button">继续</button>
+    <div class="idcard-tip">点击任意处 / 按任意键继续</div>
+  </div>
+</div>
+
+<script src="net.js?v=32"></script>
+<script src="game.js?v=32"></script>
+<script src="compose.js?v=32"></script>
+<script src="fx.js?v=32"></script>
 </body>
 </html>

@@ -679,6 +679,20 @@ html[data-phase="day"] .logbox { background: rgba(252, 250, 245, 0.82); }
 .idcard-name { font-family: var(--font-display); font-size: 30px; font-weight: 900; letter-spacing: 0.24em; color: var(--bone); }
 .idcard-camp { font-size: 10px; letter-spacing: 0.4em; text-transform: uppercase; color: var(--muted); }
 .idcard-desc { font-size: 12.5px; color: var(--bone-dim); line-height: 1.8; letter-spacing: 0.04em; }
+.idcard-continue {
+  min-width: 112px; min-height: 44px; margin-top: 4px; padding: 10px 22px;
+  border: 1px solid color-mix(in srgb, var(--gold-lit) 55%, transparent);
+  border-radius: 2px; background: transparent; color: var(--gold-lit);
+  font: 700 13px/1 var(--font-body); letter-spacing: 0.24em;
+  cursor: pointer; transition: background 180ms var(--ease), color 180ms var(--ease);
+}
+.idcard[data-camp="wolf"] .idcard-continue {
+  border-color: color-mix(in srgb, var(--blood-lit) 62%, transparent);
+  color: var(--blood-lit);
+}
+.idcard-continue:hover, .idcard-continue:focus-visible {
+  background: color-mix(in srgb, currentColor 13%, transparent);
+}
 .idcard-tip { position: absolute; bottom: -34px; left: 0; right: 0; font-size: 11px; letter-spacing: 0.2em; color: var(--muted); }
 
 /* ============================================================

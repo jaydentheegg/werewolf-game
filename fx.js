@@ -424,7 +424,11 @@
   });
   const gameEl = $('game');
   if (gameEl) new MutationObserver(() => {
-    if (gameEl.classList.contains('hidden')) { veilPhase = null; idShown = false; }  // 回到菜单：重置相位与身份卡
+    if (gameEl.classList.contains('hidden')) {
+      veilPhase = null;
+      idShown = false;
+      hideIdCard();
+    }  // 回到菜单：重置相位与身份卡
     syncPhase();
   }).observe(gameEl, { attributes: true, attributeFilter: ['class'] });
   applyPhase();
@@ -598,60 +602,59 @@
    * 关闭必须绝对可靠：只把监听挂在卡片自身上是不够的——一旦有任何元素
    * 压在它上面，点击就再也到不了这张卡。因此改为在 document 捕获阶段
    * 收 pointerdown，并同时支持键盘，且卡片一旦关闭就不再因重复日志重开。 */
-  let idStage = null, idTimer = 0, idShown = false;
+  const idStage = $('identityOverlay');
+  const idCard = $('identityCard');
+  const idContinue = $('identityContinue');
+  let idTimer = 0, idShown = false, idOpen = false, idPrevFocus = null;
 
-  const ID_DISMISS_EVENTS = ['pointerdown', 'mousedown', 'touchstart', 'click'];
-  window.__idTrace = [];
-  const idTrace = (what) => window.__idTrace.push(
-    `${(performance.now() | 0)}ms ${what} stage=${idStage ? 'set' : 'null'} dom=${document.querySelectorAll('.idcard-stage').length}`);
   function hideIdCard() {
-    idTrace('hide:enter');
-    /* 先按 DOM 实际情况清场，再看内部状态：
-     * 若两者曾经失步（状态已置空但节点仍在），这里也能把残留节点清掉。 */
-    document.querySelectorAll('.idcard-stage').forEach((n) => n.remove());
     if (!idStage) return;
-    ID_DISMISS_EVENTS.forEach((t) => document.removeEventListener(t, hideIdCard, true));
-    document.removeEventListener('keydown', onIdKey, true);
     clearTimeout(idTimer);
-    idStage = null;
-    idTrace('hide:done');
+    idTimer = 0;
+    idOpen = false;
+    idStage.classList.add('hidden');
+    idStage.setAttribute('aria-hidden', 'true');
+    const restore = idPrevFocus;
+    idPrevFocus = null;
+    if (restore && document.contains(restore) && typeof restore.focus === 'function') {
+      try { restore.focus({ preventScroll: true }); } catch (_) { /* 非关键：旧浏览器可能不支持选项 */ }
+    }
   }
   function onIdKey(e) {
-    if (e.key === 'Escape' || e.key === 'Enter' || e.key === ' ' || e.key === 'Spacebar') {
-      e.preventDefault();
-      hideIdCard();
-    }
+    if (!idOpen || e.metaKey || e.ctrlKey || e.altKey) return;
+    e.preventDefault();
+    hideIdCard();
   }
 
   function showIdCard(role) {
-    idTrace('show:enter role=' + role + ' shown=' + idShown);
     const meta = ROLE_META[role];
-    if (!meta || idStage || idShown) return;   // 一局只发一次，避免重复日志把卡再顶出来
+    if (!meta || !idStage || !idCard || idOpen || idShown) return;
     idShown = true;
-    idStage = document.createElement('div');
-    idStage.className = 'idcard-stage';
-    idStage.setAttribute('role', 'dialog');
-    idStage.setAttribute('aria-label', `你的身份：${meta.name}`);
-    idStage.innerHTML =
-      `<div class="idcard" data-camp="${meta.camp}">
-         ${sigilSVG(role)}
-         <div class="idcard-name">${meta.name}</div>
-         <div class="idcard-camp">${meta.campName}</div>
-         <div class="idcard-desc">${meta.desc}</div>
-         <div class="idcard-tip">点击任意处 / 按任意键继续</div>
-       </div>`;
-    document.body.appendChild(idStage);
+    idOpen = true;
+    idPrevFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    idCard.dataset.camp = meta.camp;
+    $('identitySigil').innerHTML = sigilSVG(role);
+    $('identityName').textContent = meta.name;
+    $('identityCamp').textContent = meta.campName;
+    $('identityDesc').textContent = meta.desc;
+    idStage.classList.remove('hidden');
+    idStage.setAttribute('aria-hidden', 'false');
 
-    /* 捕获阶段挂在 document 上：无论命中的是哪个元素都能关掉。
-     * 同时监听 mousedown/touchstart/click —— 某些环境下 pointerdown
-     * 可能被上层组件吞掉或不受支持，多一条路就少一种卡死的可能。 */
-    ID_DISMISS_EVENTS.forEach((t) => document.addEventListener(t, hideIdCard, true));
-    document.addEventListener('keydown', onIdKey, true);
-
-    FX.flash(meta.camp === 'wolf' ? [142, 20, 32] : [184, 145, 80], 0.4);
-    idTimer = setTimeout(() => { idTrace('timer:fire'); hideIdCard(); }, REDUCE ? 900 : 2600);
-    idTrace('show:done');
+    /* 先装上自动关闭，再调用任何非关键特效；即使特效异常也不会卡死。 */
+    idTimer = setTimeout(hideIdCard, REDUCE ? 900 : 4000);
+    requestAnimationFrame(() => {
+      if (idOpen) try { idContinue?.focus({ preventScroll: true }); } catch (_) { /* ignore */ }
+    });
+    try { FX.flash(meta.camp === 'wolf' ? [142, 20, 32] : [184, 145, 80], 0.4); } catch (_) { /* 视觉失败不影响继续 */ }
   }
+
+  /* 事件只绑定一次。遮罩、卡片和真实按钮都走同一个幂等关闭函数。 */
+  if (idStage) {
+    idStage.addEventListener('pointerdown', hideIdCard);
+    idStage.addEventListener('click', hideIdCard);   // Pointer Events 不可用时的兼容兜底
+  }
+  if (idContinue) idContinue.addEventListener('click', hideIdCard);
+  document.addEventListener('keydown', onIdKey, true);
 
   const log = $('log');
   if (log) {
