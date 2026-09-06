@@ -601,7 +601,11 @@
   let idStage = null, idTimer = 0, idShown = false;
 
   const ID_DISMISS_EVENTS = ['pointerdown', 'mousedown', 'touchstart', 'click'];
+  window.__idTrace = [];
+  const idTrace = (what) => window.__idTrace.push(
+    `${(performance.now() | 0)}ms ${what} stage=${idStage ? 'set' : 'null'} dom=${document.querySelectorAll('.idcard-stage').length}`);
   function hideIdCard() {
+    idTrace('hide:enter');
     /* 先按 DOM 实际情况清场，再看内部状态：
      * 若两者曾经失步（状态已置空但节点仍在），这里也能把残留节点清掉。 */
     document.querySelectorAll('.idcard-stage').forEach((n) => n.remove());
@@ -610,6 +614,7 @@
     document.removeEventListener('keydown', onIdKey, true);
     clearTimeout(idTimer);
     idStage = null;
+    idTrace('hide:done');
   }
   function onIdKey(e) {
     if (e.key === 'Escape' || e.key === 'Enter' || e.key === ' ' || e.key === 'Spacebar') {
@@ -619,6 +624,7 @@
   }
 
   function showIdCard(role) {
+    idTrace('show:enter role=' + role + ' shown=' + idShown);
     const meta = ROLE_META[role];
     if (!meta || idStage || idShown) return;   // 一局只发一次，避免重复日志把卡再顶出来
     idShown = true;
@@ -643,7 +649,8 @@
     document.addEventListener('keydown', onIdKey, true);
 
     FX.flash(meta.camp === 'wolf' ? [142, 20, 32] : [184, 145, 80], 0.4);
-    idTimer = setTimeout(hideIdCard, REDUCE ? 900 : 2600);
+    idTimer = setTimeout(() => { idTrace('timer:fire'); hideIdCard(); }, REDUCE ? 900 : 2600);
+    idTrace('show:done');
   }
 
   const log = $('log');
