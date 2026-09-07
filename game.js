@@ -876,15 +876,11 @@ async function endGame(winnerCamp) {
 function showOverlayLocal(winnerCamp, rolesHtml) {
   const human = G.players[HOST_SEAT];
   const myRole = ROLES[human.role];
-  const myCamp = myRole.camp;
   const winColor = winnerCamp === 'good' ? 'var(--good)' : (winnerCamp === 'wolf' ? 'var(--wolf)' : 'var(--text)');
   const title = winnerCamp === 'good' ? '🏆 好人阵营胜利！' : (winnerCamp === 'wolf' ? '🐺 狼人阵营胜利！' : '🌫️ 游戏结束');
-  const youWon = winnerCamp === myCamp;
   $('ovTitle').textContent = title;
   $('ovTitle').style.color = winColor;
-  $('ovText').innerHTML = youWon
-    ? `🎉 你扮演的「${myRole.icon} ${myRole.name}」随阵营一起获胜！`
-    : `😢 你扮演的「${myRole.icon} ${myRole.name}」未能获胜…`;
+  $('ovText').innerHTML = '';
   $('ovRoles').innerHTML = rolesHtml;
   $('stRole').textContent = '本局你为 ' + myRole.icon + ' ' + myRole.name;
   elOverlay.classList.remove('hidden');
@@ -1168,12 +1164,9 @@ function showOverlayClient(m) {
   const title = m.winnerCamp === 'good' ? '🏆 好人阵营胜利！' : (m.winnerCamp === 'wolf' ? '🐺 狼人阵营胜利！' : '🌫️ 游戏结束');
   $('ovTitle').textContent = title;
   $('ovTitle').style.color = winColor;
+  $('ovText').innerHTML = '';
   if (!MY) return;
   const myRole = ROLES[MY.roleId];
-  const youWon = m.winnerCamp === myRole.camp;
-  $('ovText').innerHTML = youWon
-    ? `🎉 你扮演的「${myRole.icon} ${myRole.name}」随阵营一起获胜！`
-    : `😢 你扮演的「${myRole.icon} ${myRole.name}」未能获胜…`;
   $('ovRoles').innerHTML = m.rolesHtml;
   $('stRole').textContent = '本局你为 ' + myRole.icon + ' ' + myRole.name;
   elOverlay.classList.remove('hidden');
