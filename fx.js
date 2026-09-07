@@ -539,6 +539,7 @@
         const cards = [...table.querySelectorAll('.card')];
         const now = performance.now();
         const n = cards.length || 1;
+        const activeIndex = cards.findIndex((card) => card.classList.contains('playing'));
         if (table.dataset.seats !== String(n)) table.dataset.seats = String(n);
 
         cards.forEach((c, i) => {
@@ -549,6 +550,19 @@
           const angle = i / n * Math.PI * 2;
           setVar(c, '--seat-x', `${50 + Math.sin(angle) * 40}%`);
           setVar(c, '--seat-y', `${50 - Math.cos(angle) * 37}%`);
+          if (activeIndex >= 0) {
+            let offset = i - activeIndex;
+            if (offset > n / 2) offset -= n;
+            if (offset < -n / 2) offset += n;
+            const distance = Math.abs(offset);
+            setVar(c, '--clock-x', `${50 + offset * 16}%`);
+            setVar(c, '--clock-y', `${14 + Math.min(distance, 4) * 17}%`);
+            setVar(c, '--clock-turn', `${offset === 0 ? 0 : offset > 0 ? -46 : 46}deg`);
+            setVar(c, '--clock-scale', String(Math.max(.66, 1.15 - distance * .13)));
+            setCls(c, 'clock-away', distance > 3);
+          } else {
+            setCls(c, 'clock-away', false);
+          }
           if (!c.querySelector('.card-ornament')) {
             const ornament = document.createElement('span');
             ornament.className = 'card-ornament';

@@ -122,22 +122,64 @@ let MY = null;             // 客户端（或本人视角）信息：{seat, role
  * ============================================================ */
 function widgetPick({ title, hint, opts }) {
   return new Promise((resolve) => {
+    const isVote = /投票/.test(title);
+    const isDay = (G && G.phase === 'day') || elStDay.textContent.includes('白天');
+    elAction.className = 'action' + (isVote ? ' vote-action' : '');
+    elGame.dataset.stage = isVote ? 'vote' : (isDay ? 'table' : 'night');
     let html = `<div class="atitle">${title}</div>`;
     if (hint) html += `<div class="hint">${hint}</div>`;
+    if (isVote) html += '<div class="ballot-box" aria-hidden="true"><i></i><span>投票箱</span></div>';
     html += '<div class="optgrid" id="optWrap"></div>';
     elAction.innerHTML = html;
     const wrap = $('optWrap');
     opts.forEach((opt) => {
       const b = document.createElement('button');
-      b.className = 'btn ' + (opt.cls || 'ghost');
-      b.textContent = opt.label;
-      b.onclick = () => resolve(opt.value);
+      b.className = isVote ? 'vote-card' : 'btn ' + (opt.cls || 'ghost');
+      if (isVote) {
+        b.dataset.playerId = opt.value;
+        b.setAttribute('aria-label', `投票给${opt.label}`);
+        const source = elTable.querySelector(`.card[data-id="${opt.value}"] .avatar`);
+        const portrait = document.createElement('span');
+        portrait.className = 'vote-portrait';
+        if (source) portrait.innerHTML = source.innerHTML;
+        const name = document.createElement('span');
+        name.className = 'vote-name';
+        name.textContent = opt.label;
+        b.append(portrait, name);
+      } else {
+        b.textContent = opt.label;
+      }
+      b.onclick = () => {
+        if (!isVote) {
+          elAction.innerHTML = '';
+          elAction.className = 'action';
+          resolve(opt.value);
+          return;
+        }
+        if (elAction.classList.contains('vote-locked')) return;
+        elAction.classList.add('vote-locked');
+        const box = elAction.querySelector('.ballot-box');
+        const cardRect = b.getBoundingClientRect();
+        const boxRect = box.getBoundingClientRect();
+        b.style.setProperty('--vote-x', `${boxRect.left + boxRect.width / 2 - cardRect.left - cardRect.width / 2}px`);
+        b.style.setProperty('--vote-y', `${boxRect.top + boxRect.height / 2 - cardRect.top - cardRect.height / 2}px`);
+        b.classList.add('casting');
+        const voteDelay = matchMedia('(prefers-reduced-motion: reduce)').matches ? 60 : 880;
+        setTimeout(() => {
+          elAction.className = 'action';
+          elAction.innerHTML = '';
+          elGame.dataset.stage = 'table';
+          resolve(opt.value);
+        }, voteDelay);
+      };
       wrap.appendChild(b);
     });
   });
 }
 function widgetText({ title, hint, placeholder }) {
   return new Promise((resolve) => {
+    elAction.className = 'action speech-action';
+    elGame.dataset.stage = 'speech';
     let html = `<div class="atitle">${title}</div>`;
     if (hint) html += `<div class="hint">${hint}</div>`;
     html += `<input type="text" id="chatInput" placeholder="${esc(placeholder || '说点什么…')}" maxlength="60">`;
@@ -145,9 +187,14 @@ function widgetText({ title, hint, placeholder }) {
             '<button class="btn ghost" id="chatSkip">跳过发言</button></div>';
     elAction.innerHTML = html;
     const inp = $('chatInput');
-    const send = () => { const v = inp.value.trim(); resolve(v); };
+    const finish = (value) => {
+      elAction.innerHTML = '';
+      elAction.className = 'action';
+      resolve(value);
+    };
+    const send = () => finish(inp.value.trim());
     $('chatSend').onclick = send;
-    $('chatSkip').onclick = () => resolve('');
+    $('chatSkip').onclick = () => finish('');
     inp.addEventListener('keydown', (e) => { if (e.key === 'Enter') send(); });
     inp.focus();
   });
@@ -331,6 +378,7 @@ function paintHost(speakingId = null) {
   elStAlive.textContent = `存活 ${v.alive} 人`;
   elBadge.textContent = v.dayTxt;
   elTable.innerHTML = v.players.map(x => x.html).join('');
+  elGame.dataset.stage = speakingId == null ? (G.phase === 'night' ? 'night' : 'table') : 'speech';
   if (speakingId != null) {
     const c = elTable.querySelector(`[data-id="${speakingId}"]`);
     if (c) c.classList.add('playing');
@@ -612,6 +660,7 @@ async function dayPhase() {
   for (const p of alivePs()) {
     if (G.over) break;
     paintHost(p.id);
+    if (mpHost()) broadcast({ kind: 'speaker', id: p.id });
     let text = null;
     if (p.isBot) {
       text = botSpeechLine(p);
@@ -633,9 +682,12 @@ async function dayPhase() {
     }
   }
   paintHost();
+  if (mpHost()) broadcast({ kind: 'speaker', id: null });
 
   // ---- 投票 ----
   await pubVeil('🗳️ 投票时间！', 'day', 1100);
+  elGame.dataset.stage = 'vote';
+  if (mpHost()) broadcast({ kind: 'stage', stage: 'vote' });
 
   const tally = {};
   for (const p of alivePs()) {
@@ -842,6 +894,15 @@ function clientPaint(v) {
   elStAlive.textContent = `存活 ${v.alive} 人`;
   elBadge.textContent = v.dayTxt;
   elTable.innerHTML = v.players.map(x => x.html).join('');
+  if (v.phase === 'night') elGame.dataset.stage = 'night';
+}
+
+function clientSpeaker(id) {
+  elTable.querySelectorAll('.card.playing').forEach(card => card.classList.remove('playing'));
+  elGame.dataset.stage = id == null ? 'table' : 'speech';
+  if (id == null) return;
+  const card = elTable.querySelector(`[data-id="${id}"]`);
+  if (card) card.classList.add('playing');
 }
 
 async function clientStart(msg) {
@@ -1067,6 +1128,8 @@ async function joinRoom(code) {
       if (m.kind === 'line') addLog(m.html, m.cls);
       else if (m.kind === 'veil') veilFlash(m.text, m.cls);
       else if (m.kind === 'view') { if (MY) clientPaint(m.v); }
+      else if (m.kind === 'speaker') clientSpeaker(m.id);
+      else if (m.kind === 'stage') elGame.dataset.stage = m.stage || 'table';
       else if (m.kind === 'start') clientStart(m);
       else if (m.kind === 'ask') clientAsk(m);
       else if (m.kind === 'over') showOverlayClient(m);
