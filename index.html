@@ -10,8 +10,8 @@
 <link rel="preload" as="image" href="assets/midnight-village.jpg" />
 <link rel="preload" as="image" href="assets/midnight-characters.webp" />
 <link rel="preload" as="image" href="assets/reliquary-frame.webp" />
-<link rel="stylesheet" href="style.css?v=41" />
-<link rel="stylesheet" href="midnight.css?v=41" />
+<link rel="stylesheet" href="style.css?v=42" />
+<link rel="stylesheet" href="midnight.css?v=42" />
 </head>
 <body>
 
@@ -100,135 +100,223 @@
     </div>
     <button class="text-link" id="castEnter" type="button">故事里，还缺一个你。 →</button>
   </section>
-  <div class="prologue invitation" id="invitation" hidden>
+  <!-- ============================================================
+       入夜邀请 —— 与封面同一套菜单语言：
+       居中的大写清单，选中项被白色笔触盖住，抽屉里才是真正的控件。
+       ============================================================ -->
+  <div class="entry-screen" id="invitation" data-entry="solo" hidden>
+    <i class="entry-bg" aria-hidden="true"></i>
+    <nav class="entry-menu" id="soloMenu" aria-label="单机开局设置">
 
-    <div class="prologue-title">
-      <p class="eyebrow">YOUR INVITATION / 入夜邀请</p>
-      <h2 class="invitation-title">今夜，<br>为你<em>留座。</em></h2>
-      <p class="lede">
-        留下名字，把秘密带进村庄。<br>
-        和 AI 独自开局，或邀请朋友一起入夜。
-      </p>
-      <div class="invitation-seal" aria-hidden="true">M<span>午夜来信</span></div>
-    </div>
-
-    <div class="prologue-form panel">
-      <div class="field">
-        <label for="nameInp">你的昵称</label>
-        <input type="text" id="nameInp" placeholder="例如：狼王小白" maxlength="12" />
-      </div>
-
-      <div class="field">
-        <label for="countSel">总玩家人数<span class="lbl-note">单机含你 / 联机含真人 + AI</span></label>
-        <select id="countSel">
-          <option value="6">6 人</option>
-          <option value="7">7 人</option>
-          <option value="8" selected>8 人（推荐）</option>
-          <option value="9">9 人</option>
-          <option value="10">10 人</option>
-          <option value="11">11 人</option>
-          <option value="12">12 人</option>
-        </select>
-      </div>
-
-      <div class="field">
-        <label>
-          本局角色配置
-          <span class="lbl-note">默认按人数自动配比，也可以自己调</span>
-        </label>
-        <div id="rolePreview" class="rolepreview"></div>
-
-        <div id="compEditor" class="comp" hidden>
-          <div class="comp-rows"></div>
-          <div class="comp-foot">
-            <span id="compTally" class="comp-tally"></span>
-            <button type="button" id="compReset" class="btn mini ghost">恢复默认</button>
-          </div>
-          <p id="compWarn" class="comp-warn" role="status" aria-live="polite"></p>
+      <div class="entry-row" data-key="name">
+        <button class="entry-item" type="button" aria-expanded="false">
+          <i class="entry-brush" aria-hidden="true"></i>
+          <span class="entry-caret" aria-hidden="true">▶</span>
+          <span class="entry-key">NAME</span>
+          <span class="entry-val" data-val="name">未署名</span>
+          <small>你的昵称</small>
+        </button>
+        <div class="entry-drawer" hidden>
+          <div class="entry-slot" data-slot="name"></div>
         </div>
+      </div>
 
-        <button type="button" id="compToggle" class="comp-toggle" aria-expanded="false" aria-controls="compEditor">
-          自定义阵营人数
+      <div class="entry-row" data-key="count">
+        <button class="entry-item" type="button" aria-expanded="false">
+          <i class="entry-brush" aria-hidden="true"></i>
+          <span class="entry-caret" aria-hidden="true">▶</span>
+          <span class="entry-key">PLAYERS</span>
+          <span class="entry-val" data-val="count">8 人</span>
+          <small>总玩家人数</small>
+        </button>
+        <div class="entry-drawer" hidden>
+          <p class="entry-note">单机含你，其余席位由 AI 补齐。</p>
+          <div class="entry-chips" data-chips="countSel"></div>
+          <select id="countSel" class="entry-native" aria-label="总玩家人数">
+            <option value="6">6 人</option>
+            <option value="7">7 人</option>
+            <option value="8" selected>8 人（推荐）</option>
+            <option value="9">9 人</option>
+            <option value="10">10 人</option>
+            <option value="11">11 人</option>
+            <option value="12">12 人</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="entry-row" data-key="roles">
+        <button class="entry-item" type="button" aria-expanded="false">
+          <i class="entry-brush" aria-hidden="true"></i>
+          <span class="entry-caret" aria-hidden="true">▶</span>
+          <span class="entry-key">ROLES</span>
+          <span class="entry-val" data-val="roles">—</span>
+          <small>角色配置</small>
+        </button>
+        <div class="entry-drawer" hidden>
+          <div class="entry-slot" data-slot="roles"></div>
+        </div>
+      </div>
+
+      <div class="entry-row" data-key="start">
+        <button class="entry-item is-final" type="button" id="startBtn">
+          <i class="entry-brush" aria-hidden="true"></i>
+          <span class="entry-caret" aria-hidden="true">▶</span>
+          <span class="entry-key">START GAME</span>
+          <span class="entry-val"></span>
+          <small>单机开局</small>
         </button>
       </div>
+    </nav>
 
-      <button id="startBtn" class="btn primary big">单机开局<span class="btn-sub">你 + AI</span></button>
-
-      <div class="divider"><span>或 · 真人联机</span></div>
-
-      <div class="btnrow secondary-row">
-        <button id="btnCreate" class="btn ghost">创建房间</button>
-        <button id="btnJoin" class="btn ghost">加入房间</button>
-      </div>
-
-      <div id="joinRow" class="field hidden">
-        <label for="joinCodeInp">输入好友给你的房间号</label>
-        <div class="optrow">
-          <input type="text" id="joinCodeInp" placeholder="例如 WOLF23" maxlength="10" style="flex:1" />
-          <button id="joinBtn" class="btn primary">加入</button>
-        </div>
-        <div class="hint-small">联机走 P2P 直连，无需服务器；首次使用请保证能联网加载联机模块。</div>
-      </div>
-
-      <details class="howto">
-        <summary>玩法速览</summary>
-        <ul>
-          <li><b>狼人</b>：每晚睁眼杀一个人，目标是杀光所有神民。</li>
-          <li><b>预言家</b>：每晚查验一人，得知对方是狼还是好人。</li>
-          <li><b>女巫</b>：拥有一瓶解药（救人）和一瓶毒药（杀人），各限一次；首夜可自救。</li>
-          <li><b>猎人</b>：死亡时可以开枪带走一人（被毒死除外）。</li>
-          <li><b>村民</b>：白天靠推理投票放逐狼人。</li>
-          <li>白天讨论后投票，票数最高者被放逐；平票则无人出局。</li>
-          <li>狼人全灭 → 好人胜利；狼人数 ≥ 好人数 → 狼人胜利。</li>
-          <li><b>联机版提示</b>：狼队无法密聊，每晚各自悄悄投选袭击目标、多数决；行动与身份只发给本人，别偷看别人屏幕哦。</li>
-        </ul>
-      </details>
-    </div>
+    <p class="entry-meta">
+      <button type="button" class="entry-back" data-back="setup">← 返回主菜单</button>
+      <span>SOLO&nbsp;&nbsp;·&nbsp;&nbsp;你 + AI</span>
+    </p>
   </div>
 </section>
 
 <!-- ============================================================
-     房间大厅
+     共享控件 —— 昵称与角色配置在「单机邀请页 / 联机大厅」之间搬家，
+     两块菜单共用同一份 DOM，id 与 game.js / compose.js 的绑定不变。
+     ============================================================ -->
+<div id="entryParts" hidden>
+  <div class="entry-part" data-part="name">
+    <input type="text" id="nameInp" placeholder="例如：狼王小白" maxlength="12" aria-label="你的昵称" />
+    <p class="entry-note">这个名字会出现在牌桌上，最多 12 个字。</p>
+  </div>
+  <div class="entry-part" data-part="roles">
+    <div id="rolePreview" class="rolepreview"></div>
+    <div id="compEditor" class="comp">
+      <div class="comp-rows"></div>
+      <div class="comp-foot">
+        <span id="compTally" class="comp-tally"></span>
+        <button type="button" id="compReset" class="entry-mini">恢复默认</button>
+      </div>
+      <p id="compWarn" class="comp-warn" role="status" aria-live="polite"></p>
+    </div>
+    <button type="button" id="compToggle" class="comp-toggle hidden" aria-expanded="true" aria-controls="compEditor">自定义阵营人数</button>
+  </div>
+</div>
+
+<!-- ============================================================
+     房间大厅 —— 与邀请页同一套清单，只是多了邀请码与玩家列表
      ============================================================ -->
 <section id="lobby" class="screen hidden">
-  <div class="panel wide lobby-panel">
-    <p class="eyebrow">聚集</p>
-    <h2 id="lobbyTitle" class="sec-h">房间大厅</h2>
+  <div class="entry-screen" id="lobbyEntry">
+    <i class="entry-bg" aria-hidden="true"></i>
+    <h2 id="lobbyTitle" class="entry-sr">房间大厅</h2>
+    <nav class="entry-menu" id="mpMenu" aria-label="联机大厅">
 
-    <div id="hostCodeWrap" class="codebox hidden">
-      <div class="sub">把房间号发给好友，输入相同房间号即可加入：</div>
-      <div id="roomCodeTxt" class="roomcode"></div>
-    </div>
+      <div class="entry-row" data-key="code">
+        <button class="entry-item" type="button" aria-expanded="false">
+          <i class="entry-brush" aria-hidden="true"></i>
+          <span class="entry-caret" aria-hidden="true">▶</span>
+          <span class="entry-key">ROOM CODE</span>
+          <span class="entry-val" data-val="code">——</span>
+          <small>邀请码</small>
+        </button>
+        <div class="entry-drawer" hidden>
+          <div id="hostCodeWrap" class="entry-code">
+            <p class="entry-note">把房间号发给好友，他们输入相同房间号即可入席。</p>
+            <div id="roomCodeTxt" class="roomcode"></div>
+            <button type="button" id="codeCopy" class="entry-mini">复制房间号</button>
+          </div>
+          <div class="entry-join">
+            <label for="joinCodeInp">或者，加入好友的房间</label>
+            <div class="entry-join-row">
+              <input type="text" id="joinCodeInp" placeholder="例如 WOLF23" maxlength="10" />
+              <button id="joinBtn" class="entry-mini" type="button">加入</button>
+            </div>
+            <p class="entry-note">联机走 P2P 直连，无需服务器；首次使用请保证能联网加载联机模块。</p>
+          </div>
+          <p id="clientWait" class="entry-note hidden">已进入房间，等待房主开始游戏…</p>
+        </div>
+      </div>
 
-    <div id="clientWait" class="codebox hidden">
-      <div class="sub">已进入房间，等待房主开始游戏…</div>
-    </div>
+      <div class="entry-row" data-key="roster">
+        <button class="entry-item" type="button" aria-expanded="false">
+          <i class="entry-brush" aria-hidden="true"></i>
+          <span class="entry-caret" aria-hidden="true">▶</span>
+          <span class="entry-key">LOBBY</span>
+          <span class="entry-val" data-val="roster">—</span>
+          <small>玩家列表</small>
+        </button>
+        <div class="entry-drawer" hidden>
+          <div id="mpRoster" class="roster"><div class="roster-empty">…</div></div>
+        </div>
+      </div>
 
-    <div class="field">
-      <label>玩家列表</label>
-      <div id="mpRoster" class="roster"><div class="roster-empty">…</div></div>
-    </div>
+      <div class="entry-row" data-key="name">
+        <button class="entry-item" type="button" aria-expanded="false">
+          <i class="entry-brush" aria-hidden="true"></i>
+          <span class="entry-caret" aria-hidden="true">▶</span>
+          <span class="entry-key">NAME</span>
+          <span class="entry-val" data-val="name">未署名</span>
+          <small>你的昵称</small>
+        </button>
+        <div class="entry-drawer" hidden>
+          <div class="entry-slot" data-slot="name"></div>
+        </div>
+      </div>
 
-    <div id="hostCntWrap" class="field hidden">
-      <label for="mpCountSel">本局总人数<span class="lbl-note">未满的席位将由 AI 补齐</span></label>
-      <select id="mpCountSel">
-        <option value="6">6 人</option>
-        <option value="7">7 人</option>
-        <option value="8" selected>8 人（推荐）</option>
-        <option value="9">9 人</option>
-        <option value="10">10 人</option>
-        <option value="11">11 人</option>
-        <option value="12">12 人</option>
-      </select>
-    </div>
+      <div class="entry-row hidden" data-key="count" id="hostCntWrap">
+        <button class="entry-item" type="button" aria-expanded="false">
+          <i class="entry-brush" aria-hidden="true"></i>
+          <span class="entry-caret" aria-hidden="true">▶</span>
+          <span class="entry-key">PLAYERS</span>
+          <span class="entry-val" data-val="count">8 人</span>
+          <small>总玩家人数</small>
+        </button>
+        <div class="entry-drawer" hidden>
+          <p class="entry-note">未满的席位将由 AI 补齐；不能少于已入席的真人数量。</p>
+          <div class="entry-chips" data-chips="mpCountSel"></div>
+          <select id="mpCountSel" class="entry-native" aria-label="本局总人数">
+            <option value="6">6 人</option>
+            <option value="7">7 人</option>
+            <option value="8" selected>8 人（推荐）</option>
+            <option value="9">9 人</option>
+            <option value="10">10 人</option>
+            <option value="11">11 人</option>
+            <option value="12">12 人</option>
+          </select>
+        </div>
+      </div>
 
-    <div id="mpStatus" class="mpstatus"></div>
+      <div class="entry-row hidden" data-key="roles" id="mpRolesRow">
+        <button class="entry-item" type="button" aria-expanded="false">
+          <i class="entry-brush" aria-hidden="true"></i>
+          <span class="entry-caret" aria-hidden="true">▶</span>
+          <span class="entry-key">ROLES</span>
+          <span class="entry-val" data-val="roles">—</span>
+          <small>角色配置</small>
+        </button>
+        <div class="entry-drawer" hidden>
+          <div class="entry-slot" data-slot="roles"></div>
+        </div>
+      </div>
 
-    <div class="btnrow">
-      <button id="mpStartBtn" class="btn primary big hidden">开始游戏</button>
-      <button id="mpReadyBtn" class="btn ok big hidden">准备</button>
-    </div>
-    <button id="mpLeaveBtn" class="btn ghost" style="margin-top:10px;width:100%">离开房间</button>
+      <div class="entry-row" data-key="start">
+        <button id="mpStartBtn" class="entry-item is-final hidden" type="button">
+          <i class="entry-brush" aria-hidden="true"></i>
+          <span class="entry-caret" aria-hidden="true">▶</span>
+          <span class="entry-key">START GAME</span>
+          <span class="entry-val"></span>
+          <small>开始游戏</small>
+        </button>
+        <button id="mpReadyBtn" class="entry-item is-final hidden" type="button">
+          <i class="entry-brush" aria-hidden="true"></i>
+          <span class="entry-caret" aria-hidden="true">▶</span>
+          <span class="entry-key">READY</span>
+          <span class="entry-val"></span>
+          <small>点此准备</small>
+        </button>
+      </div>
+    </nav>
+
+    <p class="entry-meta">
+      <button type="button" id="mpLeaveBtn" class="entry-back">← 离开房间</button>
+      <span id="mpStatus" class="mpstatus"></span>
+    </p>
   </div>
 </section>
 
@@ -313,12 +401,13 @@
 <script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/gsap.min.js"
         integrity="sha384-HOvlOYPIs/zjoIkWUGXkVmXsjr8GuZLV+Q+rcPwmJOVZVpvTSXQChiN4t9Euv9Vc"
         crossorigin="anonymous" referrerpolicy="no-referrer"></script>
-<script src="motion.js?v=41"></script>
-<script src="burn.js?v=41"></script>
-<script src="net.js?v=41"></script>
-<script src="game.js?v=41"></script>
-<script src="compose.js?v=41"></script>
-<script src="fx.js?v=41"></script>
-<script src="midnight.js?v=41"></script>
+<script src="motion.js?v=42"></script>
+<script src="burn.js?v=42"></script>
+<script src="net.js?v=42"></script>
+<script src="game.js?v=42"></script>
+<script src="compose.js?v=42"></script>
+<script src="fx.js?v=42"></script>
+<script src="midnight.js?v=42"></script>
+<script src="entry.js?v=42"></script>
 </body>
 </html>

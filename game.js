@@ -979,6 +979,9 @@ function updateLobbyControls() {
     } else if (humansReady < humans) {
       startBtn.disabled = true;
       status.textContent = `等待玩家准备…（${humansReady}/${humans} 已准备）`;
+    } else if (startBtn.dataset.compBad === '1') {
+      startBtn.disabled = true;
+      status.textContent = '角色配置不合法，调整后才能开局';
     } else {
       startBtn.disabled = false;
       const bots = parseInt(cntSel.value, 10) - humans;
@@ -986,7 +989,7 @@ function updateLobbyControls() {
     }
   } else {
     $('mpReadyBtn').disabled = myReady;
-    $('mpReadyBtn').textContent = myReady ? '✅ 已准备' : '🙋 准备';
+    setEntryLabel($('mpReadyBtn'), myReady ? 'READY ✓' : 'READY', myReady ? '已准备' : '点此准备');
     status.textContent = roster.length >= 2 ? `已加入 ${roster.length} 人，等待房主开始…` : '等待其他人加入…';
   }
 }
@@ -994,10 +997,12 @@ function updateLobbyControls() {
 async function enterLobby() {
   showScreen('lobby');
   const isHost = MODE === 'host';
-  $('lobbyTitle').textContent = isHost ? '🌐 房间大厅（你是房主）' : '🌐 房间大厅';
-  $('hostCodeWrap').classList.toggle('hidden', !isHost);
+  $('lobbyTitle').textContent = isHost ? '房间大厅（你是房主）' : '房间大厅';
+  // 房间号对房主和客人都要可见——客人也得能把它转给别人
+  $('hostCodeWrap').classList.remove('hidden');
   $('clientWait').classList.toggle('hidden', isHost);
   $('hostCntWrap').classList.toggle('hidden', !isHost);
+  $('mpRolesRow').classList.toggle('hidden', !isHost);
   $('mpStartBtn').classList.toggle('hidden', !isHost);
   $('mpReadyBtn').classList.toggle('hidden', isHost);
   $('mpStatus').textContent = isHost ? '等待玩家加入…' : '连接中…';
@@ -1064,6 +1069,10 @@ async function createRoom() {
     } else if (m.kind === 'ready') {
       const e = roster.find(x => x.peerId === peerId);
       if (e) { e.ready = !!m.ready; renderRoster(); }
+    } else if (m.kind === 'rename') {
+      const e = roster.find(x => x.peerId === peerId);
+      const name = String(m.name || '').trim().slice(0, 12);
+      if (e && name) { e.name = name; renderRoster(); }
     } else if (m.kind === 'answer') {
       const a = pendingAsks[m.askId];
       if (a && a.seat !== HOST_SEAT) a.resolve(m.value);
@@ -1072,6 +1081,36 @@ async function createRoom() {
   pubLobbyLog(`🎉 ${hostName} 创建了房间`);
   $('roomCodeTxt').textContent = code;
   enterLobby();
+}
+
+/* 菜单项是「大写主标 + 中文副标」两段结构，直接写 textContent 会把它抹平 */
+function setEntryLabel(btn, key, note) {
+  if (!btn) return;
+  const k = btn.querySelector('.entry-key');
+  const n = btn.querySelector('small');
+  if (k) k.textContent = key; else btn.textContent = key;
+  if (n && note != null) n.textContent = note;
+}
+
+/* 大厅里改昵称：房主直接改名单，客人通知房主 */
+function setNickname(name) {
+  const v = String(name || '').trim().slice(0, 12);
+  if (!v) return;
+  hostName = v;
+  if (MODE === 'host') {
+    if (roster[0]) roster[0].name = v;
+    renderRoster();
+  } else if (MODE === 'client' && Net) {
+    broadcast({ kind: 'rename', name: v });
+  }
+}
+
+/* 开场菜单的 MULTIPLAYER：直接建房进大厅，房间号在大厅里发给朋友 */
+async function enterMultiplayer() {
+  if (Net) leaveNetRoom();
+  if (G && !G.over) { location.reload(); return; }
+  if (!$('nameInp').value.trim()) $('nameInp').value = nickName();
+  await createRoom();
 }
 
 function pubLobbyLog(text) {
@@ -1146,10 +1185,12 @@ async function joinRoom(code) {
   };
 
   showScreen('lobby');
-  $('lobbyTitle').textContent = '🌐 连接中…';
-  $('hostCodeWrap').classList.add('hidden');
+  $('lobbyTitle').textContent = '连接中…';
+  $('roomCodeTxt').textContent = c;   // 客人也显示房间号
+  $('hostCodeWrap').classList.remove('hidden');
   $('clientWait').classList.remove('hidden');
   $('hostCntWrap').classList.add('hidden');
+  $('mpRolesRow').classList.add('hidden');
   $('mpStartBtn').classList.add('hidden');
   $('mpReadyBtn').classList.remove('hidden');
   $('mpStatus').textContent = '正在寻找房主…';
@@ -1202,15 +1243,6 @@ $('againBtn').onclick = () => { location.reload(); };
 $('countSel').onchange = () => showRolePreview(parseInt($('countSel').value, 10));
 $('mpCountSel').onchange = () => updateLobbyControls();
 
-$('btnCreate').onclick = async () => {
-  if (Net) leaveNetRoom();
-  if (G && !G.over) { location.reload(); return; }
-  await createRoom();
-};
-$('btnJoin').onclick = () => {
-  $('joinRow').classList.toggle('hidden');
-  if (!$('joinRow').classList.contains('hidden')) $('joinCodeInp').focus();
-};
 $('joinBtn').onclick = async () => {
   if (Net) leaveNetRoom();
   if (G && !G.over) { location.reload(); return; }
