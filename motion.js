@@ -92,7 +92,7 @@
     const meta = root.querySelector('.start-meta');
     const art = root.querySelector('.hero-art');
     engine.timeline({ defaults: { ease: 'power3.out' } })
-      .fromTo(art, { scale: 1.13, filter: 'grayscale(1) contrast(1.38) brightness(.22) blur(8px)' }, { scale: 1.025, filter: 'grayscale(.94) contrast(1.2) brightness(.44) blur(2px)', duration: 1.7 }, 0)
+      .fromTo(art, { scale: 1.13, filter: 'grayscale(1) contrast(1.4) brightness(.16) saturate(.6) blur(7px)' }, { scale: 1.03, filter: 'grayscale(.5) contrast(1.14) brightness(.42) saturate(.85) blur(0px)', duration: 1.7 }, 0)
       .fromTo(title, { y: -45, opacity: 0 }, { y: 0, opacity: 1, duration: .8 }, .12)
       .fromTo(items, { x: -70, opacity: 0 }, { x: 0, opacity: 1, duration: .52, stagger: .075 }, .36)
       .fromTo(meta, { opacity: 0 }, { opacity: 1, duration: .5 }, .78);

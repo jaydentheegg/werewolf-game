@@ -464,8 +464,12 @@ body[data-screen="setup"] #setup { min-height: 100svh; }
   min-height: 100svh; height: 100svh; overflow: hidden; background: #040708;
 }
 .midnight-hero .hero-art {
-  inset: -2%; background-position: center 49%; transform: scale(1.025);
-  filter: grayscale(.94) contrast(1.2) brightness(.44) blur(2px);
+  inset: 0 0 0 auto; width: min(62%, 1180px);
+  background: url('assets/midnight-village.jpg') right center / cover no-repeat;
+  transform: translate3d(var(--hero-x, 0px), var(--hero-y, 0px), 0) scale(1.03);
+  filter: grayscale(.5) contrast(1.14) brightness(.42) saturate(.85);
+  -webkit-mask-image: linear-gradient(90deg, transparent 0, #000 27%, #000 100%);
+  mask-image: linear-gradient(90deg, transparent 0, #000 27%, #000 100%);
 }
 .midnight-hero::before {
   content: ''; position: absolute; inset: 0; z-index: -1; pointer-events: none;
@@ -474,18 +478,18 @@ body[data-screen="setup"] #setup { min-height: 100svh; }
   mix-blend-mode: screen; opacity: .3;
 }
 .midnight-hero::after {
-  background: linear-gradient(90deg, #020405e6 0%, #0305068a 44%, transparent 76%),
-              linear-gradient(0deg, #020304cc, transparent 38%, #0203044d),
-              radial-gradient(circle at 78% 48%, transparent 0 22%, #0204056b 72%);
+  background: linear-gradient(90deg, #020405 0 24%, #020405b8 44%, #0204053d 68%, transparent 86%),
+              linear-gradient(0deg, #020304e0, transparent 40%, #02030440),
+              radial-gradient(circle at 74% 46%, transparent 0 26%, #02040578 76%);
 }
-.start-title { position: absolute; z-index: 2; left: 4.5%; right: 3%; top: 2.2%; }
+.start-title { position: absolute; z-index: 2; left: 7%; right: auto; top: 12%; }
 .start-title .midnight-wordmark {
-  width: 100%; margin: 0; white-space: nowrap;
+  width: auto; margin: 0; white-space: nowrap;
   font-family: Impact, Haettenschweiler, 'Arial Narrow', sans-serif;
-  font-size: clamp(120px, min(28vw, 40vh), 500px); font-weight: 900; line-height: .78;
-  letter-spacing: -.055em; color: #f3f5f2; text-transform: uppercase;
-  text-shadow: 0 0 8px #eaf7f5, 0 0 28px #b8d3d3a8;
-  transform: scaleX(1.05); transform-origin: left top;
+  font-size: clamp(56px, 8.4vw, 132px); font-weight: 900; line-height: .82;
+  letter-spacing: -.045em; color: #f3f5f2; text-transform: uppercase;
+  text-shadow: 0 0 9px #eaf7f5b8, 0 0 32px #b8d3d380;
+  transform: none; transform-origin: left top;
 }
 .start-title p {
   margin: clamp(20px, 3vh, 36px) 0 0 1%; color: #d9e1df;
@@ -548,9 +552,14 @@ body[data-screen="setup"] #setup { min-height: 100svh; }
 @keyframes entryPulse { 50% { background: #cfd8d2; color: #050607; box-shadow: 0 0 30px #cfe8e766; } }
 
 @media (max-width: 700px) {
-  .midnight-hero .hero-art { background-position: center 49%; filter: grayscale(.95) contrast(1.2) brightness(.4) blur(1.5px); }
-  .start-title { left: 5%; right: 2%; top: 4%; }
-  .start-title .midnight-wordmark { font-size: clamp(84px, 28vw, 122px); transform: scaleX(.78); }
+  .midnight-hero .hero-art {
+    inset: 0; width: auto; background-position: 72% center; background-size: cover;
+    filter: grayscale(.6) contrast(1.15) brightness(.32) saturate(.85);
+    -webkit-mask-image: linear-gradient(0deg, transparent 4%, #000 34%);
+    mask-image: linear-gradient(0deg, transparent 4%, #000 34%);
+  }
+  .start-title { left: 7%; right: auto; top: 8%; }
+  .start-title .midnight-wordmark { font-size: clamp(46px, 15vw, 84px); transform: none; }
   .start-title p { margin-top: 18px; max-width: 92%; font-size: 10px; line-height: 1.8; letter-spacing: .3em; }
   .game-menu { left: 7%; top: 39%; width: 78vw; }
   .game-menu-item { min-height: 54px; padding: 7px 15px; font-size: clamp(27px, 9vw, 39px); grid-template-columns: 22px auto 1fr; }
