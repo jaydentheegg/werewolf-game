@@ -464,8 +464,8 @@ body[data-screen="setup"] #setup { min-height: 100svh; }
   min-height: 100svh; height: 100svh; overflow: hidden; background: #040708;
 }
 .midnight-hero .hero-art {
-  inset: -5%; background-position: 62% 50%; transform: scale(1.06);
-  filter: grayscale(.9) contrast(1.22) brightness(.42) blur(3px);
+  inset: -2%; background-position: center 49%; transform: scale(1.025);
+  filter: grayscale(.94) contrast(1.2) brightness(.44) blur(2px);
 }
 .midnight-hero::before {
   content: ''; position: absolute; inset: 0; z-index: -1; pointer-events: none;
@@ -494,7 +494,7 @@ body[data-screen="setup"] #setup { min-height: 100svh; }
 }
 .start-title p span { color: #eef4f2; }
 .game-menu {
-  position: absolute; z-index: 5; left: 7%; top: 43%; width: min(430px, 42vw);
+  position: absolute; z-index: 5; left: 7%; top: 39%; width: min(430px, 42vw);
   display: flex; flex-direction: column; align-items: stretch; gap: 3px;
 }
 .game-menu-item {
@@ -548,7 +548,7 @@ body[data-screen="setup"] #setup { min-height: 100svh; }
 @keyframes entryPulse { 50% { background: #cfd8d2; color: #050607; box-shadow: 0 0 30px #cfe8e766; } }
 
 @media (max-width: 700px) {
-  .midnight-hero .hero-art { background-position: 68% center; filter: grayscale(.95) contrast(1.2) brightness(.36) blur(2px); }
+  .midnight-hero .hero-art { background-position: center 49%; filter: grayscale(.95) contrast(1.2) brightness(.4) blur(1.5px); }
   .start-title { left: 5%; right: 2%; top: 4%; }
   .start-title .midnight-wordmark { font-size: clamp(84px, 28vw, 122px); transform: scaleX(.78); }
   .start-title p { margin-top: 18px; max-width: 92%; font-size: 10px; line-height: 1.8; letter-spacing: .3em; }
