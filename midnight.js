@@ -88,6 +88,17 @@
     window.MidnightMotion?.menuIntro(hero);
   });
 
+  const castCards = [...document.querySelectorAll('.cast-card')];
+  castCards.forEach(card => {
+    const enlarge = () => window.MidnightMotion?.castHover(castCards, card, true);
+    const restore = () => window.MidnightMotion?.castHover(castCards, card, false);
+    card.tabIndex = 0;
+    card.addEventListener('pointerenter', enlarge);
+    card.addEventListener('pointerleave', restore);
+    card.addEventListener('focus', enlarge);
+    card.addEventListener('blur', restore);
+  });
+
   document.querySelector('.midnight-brand').addEventListener('click', e => {
     // Do not navigate away from a running multiplayer match.
     e.preventDefault();

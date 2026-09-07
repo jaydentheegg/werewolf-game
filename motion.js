@@ -118,5 +118,25 @@
     return true;
   }
 
-  window.MidnightMotion = { speech, voteTray, castVote, menuIntro, menuFocus, menuPanel };
+  function castHover(cards, active, entering) {
+    if (!cards?.length || !active || reduce) return false;
+    cards.forEach((card) => {
+      const selected = card === active;
+      engine.killTweensOf(card);
+      engine.to(card, {
+        y: entering && selected ? -18 : 0,
+        scale: entering && selected ? 1.13 : (entering ? .96 : 1),
+        opacity: entering && !selected ? .42 : 1,
+        filter: entering && !selected ? 'brightness(.62)' : 'brightness(1)',
+        duration: selected ? .42 : .3,
+        ease: selected ? 'power3.out' : 'power2.out',
+        overwrite: true,
+        onStart: () => { if (selected) card.style.zIndex = entering ? '8' : ''; },
+        onComplete: () => { if (selected && !entering) card.style.zIndex = ''; },
+      });
+    });
+    return true;
+  }
+
+  window.MidnightMotion = { speech, voteTray, castVote, menuIntro, menuFocus, menuPanel, castHover };
 })();

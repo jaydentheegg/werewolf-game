@@ -460,7 +460,6 @@ html.gsap-ready .vote-card.casting { animation: none; }
    ============================================================ */
 body[data-screen="setup"] .topbar { position: absolute; opacity: 0; pointer-events: none; }
 body[data-screen="setup"] #setup { min-height: 100svh; }
-body[data-screen="setup"] .cast-section { display: none; }
 .midnight-hero {
   min-height: 100svh; height: 100svh; overflow: hidden; background: #040708;
 }
@@ -562,4 +561,17 @@ body[data-screen="setup"] .cast-section { display: none; }
 
 @media (prefers-reduced-motion: reduce) {
   .game-menu-item, .game-menu-item .menu-brush { transition: none !important; }
+}
+
+/* Identity gallery: copy-free, image-first, with a full-card hover lift. */
+.cast-section { padding-top: 54px; overflow: visible; }
+.cast-gallery { position: relative; overflow: visible; }
+.cast-card {
+  transform-origin: center center; will-change: transform, opacity, filter;
+  transition: transform 360ms cubic-bezier(.2,.8,.2,1), opacity 260ms ease, filter 260ms ease;
+}
+.cast-card:focus-visible { outline: 1px solid #8b7556; outline-offset: 7px; }
+html:not(.gsap-ready) .cast-card:hover, html:not(.gsap-ready) .cast-card:focus { transform: translateY(-18px) scale(1.13); z-index: 8; }
+@media (prefers-reduced-motion: reduce) {
+  .cast-card:hover, .cast-card:focus { transform: scale(1.04); }
 }
