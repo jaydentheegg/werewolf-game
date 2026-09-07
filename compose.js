@@ -28,7 +28,14 @@
   const warn = $('compWarn');
   const reset = $('compReset');
   const countSel = $('countSel');
+  const mpCountSel = $('mpCountSel');
+  const lobby = $('lobby');
   if (!editor || !toggle || !rowsWrap || !countSel) return;
+
+  /* 同一个编辑器服务两块菜单：大厅里以 #mpCountSel 为准，否则看首页 */
+  function activeCountSel() {
+    return (mpCountSel && lobby && !lobby.classList.contains('hidden')) ? mpCountSel : countSel;
+  }
 
   /* 当前配置：{wolf:3, seer:1, ...} */
   let counts = null;
@@ -47,7 +54,7 @@
     return c;
   }
 
-  function seatCount() { return parseInt(countSel.value, 10) || 8; }
+  function seatCount() { return parseInt(activeCountSel().value, 10) || 8; }
 
   /* 校验：返回错误文案，null 表示通过 */
   function validate() {
@@ -85,9 +92,13 @@
     tally.classList.toggle('is-bad', !ok);
 
     /* 配置非法时禁用开局，避免开出一局立刻结束的牌 */
-    for (const id of ['startBtn', 'btnCreate']) {
-      const b = $(id);
-      if (b) b.disabled = !ok;
+    $('startBtn').disabled = !ok;
+    // 联机开局键的开关权在 game.js（还要看人数与准备状态），这里只留个否决标记
+    const mpStart = $('mpStartBtn');
+    if (mpStart) {
+      mpStart.dataset.compBad = ok ? '' : '1';
+      if (!ok) mpStart.disabled = true;
+      else if (typeof updateLobbyControls === 'function') updateLobbyControls();
     }
     render();
   }
@@ -135,10 +146,14 @@
   }
 
   /* 人数变化时：未自定义就跟随默认；已自定义则保留但重新校验 */
-  countSel.addEventListener('change', () => {
+  const onSeatChange = () => {
     if (!custom) resetToDefault();
     else apply();
-  });
+  };
+  countSel.addEventListener('change', onSeatChange);
+  mpCountSel?.addEventListener('change', onSeatChange);
+  /* 首页 ↔ 大厅切换时人数基准换了一个 select，要按新基准重新校验 */
+  if (lobby) new MutationObserver(onSeatChange).observe(lobby, { attributes: true, attributeFilter: ['class'] });
 
   toggle.addEventListener('click', () => {
     const open = editor.hasAttribute('hidden');

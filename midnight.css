@@ -547,7 +547,6 @@ body[data-screen="setup"] #setup { min-height: 100svh; }
   background: transparent; color: #edf1ee; font: 16px 'Arial Narrow', sans-serif; letter-spacing: .12em; cursor: pointer;
 }
 .panel-choice span { color: #c5a678; }
-.invitation[data-entry="multi"] #btnCreate, .invitation[data-entry="multi"] #btnJoin,
 .entry-highlight { animation: entryPulse 900ms ease-in-out 2; }
 @keyframes entryPulse { 50% { background: #cfd8d2; color: #050607; box-shadow: 0 0 30px #cfe8e766; } }
 
@@ -595,110 +594,230 @@ html:not(.gsap-ready) .cast-card:hover, html:not(.gsap-ready) .cast-card:focus {
 .burn-layer canvas { display: block; width: 100%; height: 100%; }
 
 /* ============================================================
-   INVITATION — same night as the title screen.
-   Black ground, the village bleeding in from the right, hairline
-   rules and one white call to action, so the page the menu burns
-   into reads as the same film as the cover.
+   ENTRY MENU — the invitation and the lobby speak the title
+   screen's language: one centred list of capitals, the selected
+   line covered by a white brush stroke, and the real control
+   waiting inside the drawer underneath it.
+   Both screens share this block; #invitation and #lobbyEntry
+   only differ in which rows they carry.
    ============================================================ */
-#invitation.invitation {
+.entry-screen {
   --text: #eef1ef; --muted: #8b9591; --line: #ffffff1f; --line-soft: #ffffff12;
   --accent: #dfe6e3; --gold-lit: #ffffff; --wolf: #e08a74; --good: #a9c49b;
   --bg-raise: #0b0d0e; --bg-sunk: #070809;
   position: relative; isolation: isolate;
-  background: #030304; color: var(--text);
-  padding: clamp(54px, 8vh, 104px) 7% clamp(58px, 9vh, 110px);
-  gap: clamp(28px, 5vw, 86px); align-items: center; border-top: 0;
+  display: flex; flex-direction: column; align-items: center;
+  /* safe center: an open drawer may outgrow the viewport — never clip the top row */
+  justify-content: center; justify-content: safe center;
+  min-height: calc(100vh - 96px);
+  padding: clamp(48px, 8vh, 100px) 6% clamp(52px, 9vh, 104px);
+  background: #030304; color: var(--text); text-align: left;
 }
-#invitation.invitation::before {
-  content: ''; position: absolute; inset: 0; z-index: -2; pointer-events: none;
+/* The village keeps bleeding in from the right, as on the cover. */
+.entry-screen .entry-bg {
+  position: absolute; inset: 0; z-index: -1; pointer-events: none; display: block;
   background: url('assets/midnight-village.jpg') right center / cover no-repeat;
   filter: grayscale(.55) contrast(1.12) brightness(.3) saturate(.85);
-  -webkit-mask-image: linear-gradient(90deg, transparent 0, #000 52%);
-  mask-image: linear-gradient(90deg, transparent 0, #000 52%);
+  -webkit-mask-image: linear-gradient(90deg, transparent 0, #000 62%);
+  mask-image: linear-gradient(90deg, transparent 0, #000 62%);
 }
-#invitation.invitation::after {
-  content: ''; position: absolute; inset: 0; z-index: -1; pointer-events: none;
-  background: linear-gradient(90deg, #030304 0 26%, #030304c4 48%, #03030459 72%, #03030426),
+.entry-screen .entry-bg::after {
+  content: ''; position: absolute; inset: 0;
+  background: linear-gradient(90deg, #030304 0 30%, #030304c4 52%, #03030459 76%, #03030426),
               linear-gradient(0deg, #030304e6, transparent 34%, #03030499);
 }
-
-/* Type: the cover's register — narrow, spaced, faintly lit. */
-#invitation .eyebrow {
-  font: 300 clamp(11px, 1.15vw, 14px) 'Arial Narrow', 'Helvetica Neue', sans-serif;
-  letter-spacing: .34em; text-transform: uppercase;
-  color: #a8b5b1; text-shadow: 0 0 12px #e5ffff45; margin-bottom: 22px;
-}
-#invitation .invitation-title {
-  color: #f3f5f2; font-weight: 500; letter-spacing: -.02em;
-  text-shadow: 0 0 10px #eaf7f53d, 0 0 40px #b8d3d333;
-}
-#invitation .invitation-title em { color: #c8d3cf; }
-#invitation .lede { color: #9aa4a0; letter-spacing: .06em; line-height: 2.1; }
-#invitation .invitation-seal {
-  color: #aebbb7; border-color: #aebbb7; outline-color: #aebbb750;
-  box-shadow: 0 0 34px #cfe8e714;
+/* 大厅是独立整屏，还要减掉 .screen 自己的内边距 */
+#lobby .entry-screen { min-height: calc(100vh - 190px); }
+.entry-sr {
+  position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0;
+  overflow: hidden; clip: rect(0 0 0 0); clip-path: inset(50%); white-space: nowrap;
 }
 
-/* The form is the cover's menu panel: dark glass over the artwork. */
-#invitation .prologue-form {
-  padding: clamp(24px, 2.6vw, 36px);
-  background: #05070896; border: 0; border-left: 1px solid #dbe9e83d;
-  box-shadow: -30px 0 80px #000a; backdrop-filter: blur(18px);
+.entry-menu { width: min(760px, 90vw); display: flex; flex-direction: column; gap: 2px; }
+.entry-row { position: relative; }
+.entry-row.hidden { display: none !important; }
+
+.entry-item {
+  position: relative; isolation: isolate; width: 100%;
+  display: grid; grid-template-columns: 26px minmax(0, auto) 1fr auto; align-items: baseline;
+  gap: 0 14px; min-height: 62px; padding: 9px 22px 10px;
+  border: 0; background: transparent; color: #f0f2ef; cursor: pointer; text-align: left;
+  font: 300 clamp(26px, 2.9vw, 44px)/1 'Arial Narrow', 'Helvetica Neue', sans-serif;
+  letter-spacing: -.02em;
+  transition: color 150ms ease;
 }
-#invitation .field label {
+.entry-item > * { position: relative; z-index: 2; }
+.entry-item .entry-caret { opacity: 0; font-size: .42em; align-self: center; }
+.entry-item .entry-key { text-transform: uppercase; white-space: nowrap; }
+.entry-item .entry-val {
+  justify-self: end; align-self: center; max-width: 100%; overflow: hidden;
+  text-overflow: ellipsis; white-space: nowrap;
+  font: 400 clamp(12px, 1.15vw, 16px) var(--font-ui), sans-serif;
+  letter-spacing: .12em; color: #8b9591; transition: color 150ms ease;
+}
+.entry-item small {
+  align-self: center; justify-self: end; min-width: 4.6em; text-align: right;
+  font: 500 9px var(--font-ui); letter-spacing: .2em; color: currentColor;
+  opacity: 0; transition: opacity 160ms ease;
+}
+.entry-item .entry-brush {
+  position: absolute; z-index: 0; left: -13px; right: -10px; top: 2px; bottom: 2px;
+  background: #f2f3ef;
+  clip-path: polygon(0 8%, 94% 0, 100% 18%, 97% 52%, 100% 84%, 89% 94%, 4% 100%, 0 84%);
+  transform: scaleX(0); transform-origin: left center;
+  transition: transform 240ms cubic-bezier(.2,.8,.2,1);
+  filter: drop-shadow(0 0 10px #dff3f388);
+}
+.entry-row.is-active > .entry-item,
+.entry-item.is-active { color: #08090a; }
+.entry-row.is-active > .entry-item .entry-brush,
+.entry-item.is-active .entry-brush { transform: scaleX(1); }
+.entry-row.is-active > .entry-item .entry-val,
+.entry-item.is-active .entry-val { color: #3d4441; }
+.entry-row.is-active > .entry-item small,
+.entry-row.is-active > .entry-item .entry-caret,
+.entry-item.is-active small, .entry-item.is-active .entry-caret { opacity: 1; }
+.entry-item:focus-visible { outline: 0; }
+.entry-item:disabled { cursor: not-allowed; }
+.entry-item:disabled .entry-key { opacity: .38; }
+
+/* The drawer is the cover's side panel, dropped under its own line. */
+.entry-drawer {
+  margin: 4px 0 14px; padding: clamp(18px, 2vw, 26px);
+  background: #05070896; border-left: 1px solid #dbe9e83d;
+  box-shadow: -24px 0 60px #000a; backdrop-filter: blur(18px);
+  animation: entryDrawer 260ms cubic-bezier(.2,.8,.2,1) both;
+}
+@keyframes entryDrawer { from { opacity: 0; transform: translateY(-8px); clip-path: inset(0 0 100% 0); } }
+.entry-drawer[hidden] { display: none; }
+.entry-note {
+  margin: 0 0 12px; font-size: 11px; line-height: 1.9; letter-spacing: .1em; color: #7d8783;
+}
+.entry-drawer > :last-child { margin-bottom: 0; }
+.entry-drawer label {
+  display: block; margin: 0 0 9px;
   font: 500 10px 'Arial Narrow', var(--font-ui), sans-serif;
   letter-spacing: .26em; text-transform: uppercase; color: #c3ccc8;
 }
-#invitation .lbl-note, #invitation .hint-small, #invitation .comp-note {
-  letter-spacing: .12em; color: #7d8783; text-transform: none;
-}
-#invitation input, #invitation select {
+.entry-drawer input[type="text"] {
+  width: 100%; padding: 13px 14px; min-height: 46px; font-size: 15px; font-family: inherit;
   background: #04060699; color: #edf1ef; border: 1px solid #ffffff1f; border-radius: 0;
-  letter-spacing: .08em;
+  letter-spacing: .08em; outline: 0;
 }
-#invitation input:focus, #invitation select:focus {
-  outline: 0; border-color: #dfe6e3; box-shadow: 0 0 0 1px #dfe6e32e, 0 0 22px #cfe8e71a;
-}
-#invitation input::placeholder { color: #6d7773; }
+.entry-drawer input[type="text"]:focus { border-color: #dfe6e3; box-shadow: 0 0 0 1px #dfe6e32e; }
+.entry-drawer input::placeholder { color: #6d7773; }
 
-#invitation .btn {
-  border-radius: 0;
-  font-family: 'Arial Narrow', 'Helvetica Neue', sans-serif; letter-spacing: .14em;
+/* Seat count: chips, not a dropdown. The <select> stays as the fallback
+   and as the value game.js actually reads. */
+.entry-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.entry-chip {
+  min-width: 54px; padding: 11px 4px; border: 1px solid #ffffff24; background: transparent;
+  color: #d8dedb; border-radius: 0; cursor: pointer;
+  font: 400 15px var(--font-ui), sans-serif; letter-spacing: .1em;
+  transition: border-color 150ms ease, background 150ms ease, color 150ms ease;
 }
-#invitation .btn.primary {
-  background: #f2f3ef; border-color: #f2f3ef; color: #08090a; font-weight: 700;
-  box-shadow: 0 0 26px #dff3f329;
-}
-#invitation .btn.primary:hover:not(:disabled) { background: #fff; border-color: #fff; color: #08090a; }
-#invitation .btn.primary .btn-sub { color: #4a514e; }
-#invitation .btn.ghost { background: transparent; border-color: #ffffff2b; color: #dde3e0; }
-#invitation .btn.ghost:hover:not(:disabled) { background: #ffffff0d; border-color: #eef2f0; color: #fff; }
-#invitation .divider { letter-spacing: .3em; color: #7d8783; font-size: 10px; text-transform: uppercase; }
-#invitation .divider::before, #invitation .divider::after { background: #ffffff1c; }
+.entry-chip:hover:not(:disabled) { border-color: #eef2f0; color: #fff; }
+.entry-chip.is-on { background: #f2f3ef; border-color: #f2f3ef; color: #08090a; font-weight: 700; }
+.entry-chip:disabled { opacity: .26; cursor: not-allowed; }
+.entry-menu.entry-ready .entry-native { display: none; }
+.entry-native { width: 100%; margin-top: 10px; }
 
-/* Role picker: no more parchment panel in the middle of the night. */
-#invitation .comp { background: #070809d9; border: 1px solid #ffffff17; border-radius: 0; }
-#invitation .comp-row { border-bottom-color: #ffffff10; }
-#invitation .comp-row .sigil { --sig-cut: #070809; }
-#invitation .comp-btn {
+.entry-mini {
+  padding: 10px 16px; min-height: 40px; border: 1px solid #ffffff2b; background: transparent;
+  color: #dde3e0; border-radius: 0; cursor: pointer;
+  font: 500 11px var(--font-ui), sans-serif; letter-spacing: .2em; text-transform: uppercase;
+  transition: border-color 150ms ease, background 150ms ease, color 150ms ease;
+}
+.entry-mini:hover { background: #ffffff0d; border-color: #eef2f0; color: #fff; }
+
+/* Room code + join */
+.entry-code { margin-bottom: 22px; padding-bottom: 20px; border-bottom: 1px solid #ffffff14; }
+.entry-code.hidden { display: none !important; }
+.entry-code .roomcode {
+  margin: 0 0 14px; padding: 14px 4px; background: transparent; border: 0;
+  font: 300 clamp(30px, 4vw, 52px)/1 'Arial Narrow', 'Helvetica Neue', sans-serif;
+  letter-spacing: .3em; color: #f3f5f2; text-shadow: 0 0 22px #cfe8e73d;
+}
+.entry-join-row { display: flex; gap: 8px; }
+.entry-join-row input[type="text"] { flex: 1; text-transform: uppercase; letter-spacing: .22em; }
+.entry-join-row .entry-mini { flex: none; }
+
+/* Roster */
+.entry-drawer .roster { gap: 0; }
+.entry-drawer .roster-row {
+  padding: 12px 2px; border: 0; border-bottom: 1px solid #ffffff10; background: transparent;
+  border-radius: 0; font-size: 14px;
+}
+.entry-drawer .roster-row:last-child { border-bottom: 0; }
+.entry-drawer .roster-row .rname { font-weight: 400; letter-spacing: .08em; color: #e7ebe9; }
+.entry-drawer .roster-row .rtag { border-radius: 0; }
+.entry-drawer .roster-empty { color: #7d8783; font-size: 12px; letter-spacing: .12em; }
+
+/* Role composition */
+.entry-drawer .rolepreview { margin-bottom: 16px; }
+.entry-drawer .rp-badge {
+  background: #04060680; border-color: #ffffff1c; color: #cdd5d1; border-radius: 0;
+}
+.entry-drawer .rp-badge .sigil { --sig-cut: #050708; }
+.entry-drawer .rp-badge:hover { border-color: #dfe6e3; transform: translateY(-2px); }
+.entry-drawer .comp { background: transparent; border: 1px solid #ffffff17; border-radius: 0; }
+.entry-drawer .comp-row { border-bottom-color: #ffffff10; }
+.entry-drawer .comp-row .sigil { --sig-cut: #070809; }
+.entry-drawer .comp-name { color: #e2e7e4; }
+.entry-drawer .comp-note { color: #7d8783; }
+.entry-drawer .comp-btn {
   background: transparent; border: 1px solid #ffffff24; color: #e4e9e6; border-radius: 0;
 }
-#invitation .comp-btn:hover:not(:disabled) { background: #ffffff12; border-color: #eef2f0; color: #fff; }
-#invitation .comp-tally { color: #8b9591; }
-#invitation .comp-tally b { color: #eef1ef; }
-#invitation .comp-toggle { color: #b6c2be; letter-spacing: .22em; text-transform: uppercase; font-size: 10px; }
-#invitation .comp-toggle:hover { color: #fff; }
-#invitation .rp-badge { background: #04060680; border-color: #ffffff1c; color: #cdd5d1; border-radius: 0; }
-#invitation .rp-badge .sigil { --sig-cut: #050708; }
-#invitation .rp-badge:hover { border-color: #dfe6e3; transform: translateY(-2px); }
-#invitation .howto { border-top-color: #ffffff14; }
-#invitation .howto summary { color: #b6c2be; letter-spacing: .18em; }
+.entry-drawer .comp-btn:hover:not(:disabled) { background: #ffffff12; border-color: #eef2f0; color: #fff; }
+.entry-drawer .comp-num { color: #eef1ef; }
+.entry-drawer .comp-tally { color: #8b9591; }
+.entry-drawer .comp-tally b { color: #eef1ef; }
+.entry-drawer .comp-warn { color: #e08a74; }
+
+/* Footer line: the cover's start-meta, with the way back. */
+.entry-meta {
+  width: min(760px, 90vw); margin: clamp(22px, 4vh, 40px) 0 0;
+  display: flex; align-items: center; justify-content: space-between; gap: 16px;
+  color: #7d8783; font: 9px var(--font-ui); letter-spacing: .23em; text-transform: uppercase;
+}
+.entry-meta .mpstatus {
+  margin: 0; text-align: right; text-transform: none; letter-spacing: .1em;
+  font-size: 10px; color: #8b9591;
+}
+.entry-back {
+  flex: none; padding: 6px 0; border: 0; background: transparent; color: #9aa4a0;
+  font: 9px var(--font-ui); letter-spacing: .23em; text-transform: uppercase; cursor: pointer;
+}
+.entry-back:hover { color: #fff; }
+
+/* The list arrives the way the cover's menu does. */
+.entry-screen .entry-row { animation: entryRise 620ms cubic-bezier(.2,.8,.2,1) both; }
+.entry-screen .entry-row:nth-child(2) { animation-delay: 70ms; }
+.entry-screen .entry-row:nth-child(3) { animation-delay: 140ms; }
+.entry-screen .entry-row:nth-child(4) { animation-delay: 210ms; }
+.entry-screen .entry-row:nth-child(5) { animation-delay: 280ms; }
+.entry-screen .entry-row:nth-child(6) { animation-delay: 350ms; }
+@keyframes entryRise { from { opacity: 0; transform: translateY(14px); } }
 
 @media (max-width: 700px) {
-  #invitation.invitation { padding: 40px 6% 52px; gap: 26px; }
-  #invitation.invitation::before {
+  .entry-screen { padding: 40px 6% 52px; min-height: calc(100vh - 78px); }
+  .entry-screen .entry-bg {
     -webkit-mask-image: linear-gradient(0deg, transparent 6%, #000 46%);
     mask-image: linear-gradient(0deg, transparent 6%, #000 46%);
   }
-  #invitation .prologue-form { border-left: 0; border-top: 1px solid #dbe9e83d; box-shadow: 0 -20px 60px #000a; }
+  .entry-item {
+    min-height: 52px; padding: 8px 14px; grid-template-columns: 20px minmax(0, auto) 1fr;
+    font-size: clamp(24px, 7.6vw, 34px); gap: 0 10px;
+  }
+  .entry-item small { display: none; }
+  .entry-item .entry-val { font-size: 12px; }
+  .entry-drawer { padding: 16px 14px; }
+  .entry-chip { flex: 1 0 21%; min-width: 0; }
+  .entry-meta { flex-direction: column; align-items: flex-start; gap: 6px; }
+  .entry-meta .mpstatus { text-align: left; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .entry-item .entry-brush { transition: none !important; }
+  .entry-screen .entry-row, .entry-drawer { animation: none !important; }
 }

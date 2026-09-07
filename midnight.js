@@ -14,19 +14,21 @@
     invitation.hidden = false;
     invitation.dataset.entry = mode;
     invitation.scrollIntoView({ behavior: (reduce || instant) ? 'instant' : 'smooth', block: 'start' });
-    $('nameInp').focus({ preventScroll: true });
-    if (mode === 'multi') {
-      ['btnCreate', 'btnJoin'].forEach(id => $(id).classList.add('entry-highlight'));
-      setTimeout(() => ['btnCreate', 'btnJoin'].forEach(id => $(id).classList.remove('entry-highlight')), 1800);
-    }
+    invitation.querySelector('.entry-item')?.focus({ preventScroll: true });
   }
 
-  // The menu burns the page away and the invitation is what is left behind it.
+  // MULTIPLAYER skips the solo list: the room (and its code) is the lobby.
+  function land(mode, instant) {
+    if (mode === 'multi' && typeof enterMultiplayer === 'function') { enterMultiplayer(); return; }
+    reveal('solo', instant);
+  }
+
+  // The menu burns the page away and the next screen is what is left behind it.
   function enter(mode = 'solo', origin) {
-    if (reduce || !window.MidnightBurn || window.MidnightBurn.busy) { reveal(mode, false); return; }
+    if (reduce || !window.MidnightBurn || window.MidnightBurn.busy) { land(mode, false); return; }
     window.MidnightBurn.play({
       x: origin && origin.x, y: origin && origin.y,
-      cover: () => reveal(mode, true),
+      cover: () => land(mode, true),
     });
   }
   $('castEnter').addEventListener('click', e => enter('solo', pointOf(e)));
@@ -96,6 +98,7 @@
       if (event.key === 'Escape') { event.preventDefault(); closeMenuPanel(); }
       return;
     }
+    if (!invitation.hidden) return;   // 邀请页自己接管上下键（entry.js）
     if (/^(INPUT|SELECT|TEXTAREA)$/.test(event.target.tagName)) return;
     if (event.key === 'ArrowDown') { event.preventDefault(); focusMenu(menuIndex + 1, true); }
     else if (event.key === 'ArrowUp') { event.preventDefault(); focusMenu(menuIndex - 1, true); }
