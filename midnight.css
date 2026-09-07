@@ -448,3 +448,9 @@ html[data-phase="day"] .action .btn { background: #080809; color: #d7d0c5; borde
   #game[data-stage="speech"] .table .card, #game[data-stage="speech"] .table .card.playing .avatar,
   .vote-card.casting { animation-duration: 1ms !important; transition-duration: 1ms !important; }
 }
+
+/* Once GSAP is available it owns transforms and sequencing; CSS remains the
+   no-network fallback and the reduced-motion presentation. */
+html.gsap-ready #game[data-stage="speech"] .table .card { transition: left 680ms cubic-bezier(.2,.8,.2,1), top 680ms cubic-bezier(.2,.8,.2,1); }
+html.gsap-ready #game[data-stage="speech"] .table .card.playing .avatar,
+html.gsap-ready .vote-card.casting { animation: none; }

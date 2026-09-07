@@ -164,16 +164,21 @@ function widgetPick({ title, hint, opts }) {
         b.style.setProperty('--vote-x', `${boxRect.left + boxRect.width / 2 - cardRect.left - cardRect.width / 2}px`);
         b.style.setProperty('--vote-y', `${boxRect.top + boxRect.height / 2 - cardRect.top - cardRect.height / 2}px`);
         b.classList.add('casting');
-        const voteDelay = matchMedia('(prefers-reduced-motion: reduce)').matches ? 60 : 880;
-        setTimeout(() => {
+        const finishVote = () => {
           elAction.className = 'action';
           elAction.innerHTML = '';
           elGame.dataset.stage = 'table';
           resolve(opt.value);
-        }, voteDelay);
+        };
+        const animated = window.MidnightMotion?.castVote(b, box, finishVote);
+        if (!animated) {
+          const voteDelay = matchMedia('(prefers-reduced-motion: reduce)').matches ? 60 : 880;
+          setTimeout(finishVote, voteDelay);
+        }
       };
       wrap.appendChild(b);
     });
+    if (isVote) requestAnimationFrame(() => window.MidnightMotion?.voteTray(elAction));
   });
 }
 function widgetText({ title, hint, placeholder }) {

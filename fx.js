@@ -530,6 +530,7 @@
     let knownDead = null;
     const seen = new Set();
     const dying = new Map();
+    let animatedSpeaker = null;
     let applying = false;          // 防止自身写入触发的递归观察
 
     const onTable = () => {
@@ -577,6 +578,14 @@
           }
         });
         swapAvatars(table);
+
+        const speakerId = activeIndex >= 0 ? cards[activeIndex]?.dataset.id : null;
+        if (speakerId && speakerId !== animatedSpeaker) {
+          animatedSpeaker = speakerId;
+          requestAnimationFrame(() => window.MidnightMotion?.speech(cards, activeIndex));
+        } else if (!speakerId) {
+          animatedSpeaker = null;
+        }
 
         const dead = new Set(cards.filter((c) => c.classList.contains('dead')).map((c) => c.dataset.id));
         if (knownDead === null) { knownDead = dead; return; }
