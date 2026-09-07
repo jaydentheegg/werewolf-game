@@ -10,17 +10,35 @@
   const menuPanel = $('menuPanel');
   let menuIndex = 0;
 
-  function enter(mode = 'solo') {
+  function reveal(mode, instant) {
     invitation.hidden = false;
     invitation.dataset.entry = mode;
-    invitation.scrollIntoView({ behavior: reduce ? 'instant' : 'smooth', block: 'start' });
+    invitation.scrollIntoView({ behavior: (reduce || instant) ? 'instant' : 'smooth', block: 'start' });
     $('nameInp').focus({ preventScroll: true });
     if (mode === 'multi') {
       ['btnCreate', 'btnJoin'].forEach(id => $(id).classList.add('entry-highlight'));
       setTimeout(() => ['btnCreate', 'btnJoin'].forEach(id => $(id).classList.remove('entry-highlight')), 1800);
     }
   }
-  $('castEnter').addEventListener('click', () => enter('solo'));
+
+  // The menu burns the page away and the invitation is what is left behind it.
+  function enter(mode = 'solo', origin) {
+    if (reduce || !window.MidnightBurn || window.MidnightBurn.busy) { reveal(mode, false); return; }
+    window.MidnightBurn.play({
+      x: origin && origin.x, y: origin && origin.y,
+      cover: () => reveal(mode, true),
+    });
+  }
+  $('castEnter').addEventListener('click', e => enter('solo', pointOf(e)));
+
+  // Burn from wherever the player actually clicked, falling back to the
+  // element's own centre for keyboard activation.
+  function pointOf(event) {
+    if (event && event.clientX) return { x: event.clientX, y: event.clientY };
+    const rect = event?.currentTarget?.getBoundingClientRect?.();
+    if (!rect) return null;
+    return { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 };
+  }
 
   function focusMenu(index, moveFocus = false) {
     menuIndex = (index + menuItems.length) % menuItems.length;
@@ -65,9 +83,9 @@
   menuItems.forEach((item, index) => {
     item.addEventListener('pointerenter', () => focusMenu(index));
     item.addEventListener('focus', () => focusMenu(index));
-    item.addEventListener('click', () => {
+    item.addEventListener('click', event => {
       const action = item.dataset.menuAction;
-      if (action === 'new' || action === 'multi') enter(action);
+      if (action === 'new' || action === 'multi') enter(action, pointOf(event));
       else openMenuPanel(action);
     });
   });
