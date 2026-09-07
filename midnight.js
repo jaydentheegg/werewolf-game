@@ -5,21 +5,95 @@
   const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
   const setup = $('setup'), game = $('game'), overlay = $('overlay');
   const invitation = $('invitation');
+  const hero = document.querySelector('.midnight-hero');
+  const menuItems = [...document.querySelectorAll('.game-menu-item')];
+  const menuPanel = $('menuPanel');
+  let menuIndex = 0;
 
-  function enter() {
+  function enter(mode = 'solo') {
     invitation.hidden = false;
+    invitation.dataset.entry = mode;
     invitation.scrollIntoView({ behavior: reduce ? 'instant' : 'smooth', block: 'start' });
     $('nameInp').focus({ preventScroll: true });
+    if (mode === 'multi') {
+      ['btnCreate', 'btnJoin'].forEach(id => $(id).classList.add('entry-highlight'));
+      setTimeout(() => ['btnCreate', 'btnJoin'].forEach(id => $(id).classList.remove('entry-highlight')), 1800);
+    }
   }
-  $('enterVillage').addEventListener('click', enter);
-  $('castEnter').addEventListener('click', enter);
+  $('castEnter').addEventListener('click', () => enter('solo'));
+
+  function focusMenu(index, moveFocus = false) {
+    menuIndex = (index + menuItems.length) % menuItems.length;
+    menuItems.forEach((item, i) => item.classList.toggle('is-active', i === menuIndex));
+    const active = menuItems[menuIndex];
+    if (moveFocus) active.focus();
+    window.MidnightMotion?.menuFocus(menuItems, active);
+  }
+
+  function closeMenuPanel() {
+    if (menuPanel.hidden) return;
+    if (reduce || !window.MidnightMotion?.menuPanel(menuPanel, false)) {
+      menuPanel.hidden = true;
+    } else {
+      setTimeout(() => { menuPanel.hidden = true; }, 250);
+    }
+    menuItems[menuIndex]?.focus({ preventScroll: true });
+  }
+
+  function openMenuPanel(kind) {
+    const title = $('menuPanelTitle'), body = $('menuPanelBody');
+    if (kind === 'how') {
+      title.textContent = 'HOW TO PLAY';
+      body.innerHTML = '<p>夜晚，特殊身份秘密行动；白天，所有幸存者轮流发言并投票放逐一人。</p><p>好人需要找出全部狼人；狼人需要隐藏身份，直到人数足以控制村庄。</p><p class="menu-panel-note">身份信息只显示给本人。不要把你的屏幕给别人看。</p>';
+    } else if (kind === 'settings') {
+      title.textContent = 'SETTINGS';
+      const soundOn = $('soundToggle').getAttribute('aria-pressed') === 'true';
+      body.innerHTML = `<button id="menuSoundControl" class="panel-choice" type="button">SOUND <span>${soundOn ? 'ON' : 'OFF'}</span></button><p>动画会自动尊重系统的“减少动态效果”设置。</p>`;
+      $('menuSoundControl').addEventListener('click', () => {
+        $('soundToggle').click();
+        setTimeout(() => { $('menuSoundControl').querySelector('span').textContent = $('soundToggle').getAttribute('aria-pressed') === 'true' ? 'ON' : 'OFF'; }, 120);
+      });
+    } else {
+      title.textContent = 'CREDITS';
+      body.innerHTML = '<p>Concept & Direction — Jayden</p><p>Game Systems & Interface — Jayden × Codex</p><p>Original character artwork and village illustration were created specifically for MIDNIGHT.</p>';
+    }
+    menuPanel.hidden = false;
+    window.MidnightMotion?.menuPanel(menuPanel, true);
+    $('menuPanelClose').focus({ preventScroll: true });
+  }
+
+  menuItems.forEach((item, index) => {
+    item.addEventListener('pointerenter', () => focusMenu(index));
+    item.addEventListener('focus', () => focusMenu(index));
+    item.addEventListener('click', () => {
+      const action = item.dataset.menuAction;
+      if (action === 'new' || action === 'multi') enter(action);
+      else openMenuPanel(action);
+    });
+  });
+  $('menuPanelClose').addEventListener('click', closeMenuPanel);
+  document.addEventListener('keydown', event => {
+    if (setup.classList.contains('hidden')) return;
+    if (!menuPanel.hidden) {
+      if (event.key === 'Escape') { event.preventDefault(); closeMenuPanel(); }
+      return;
+    }
+    if (/^(INPUT|SELECT|TEXTAREA)$/.test(event.target.tagName)) return;
+    if (event.key === 'ArrowDown') { event.preventDefault(); focusMenu(menuIndex + 1, true); }
+    else if (event.key === 'ArrowUp') { event.preventDefault(); focusMenu(menuIndex - 1, true); }
+    else if (event.key === 'Enter' && document.activeElement?.classList.contains('game-menu-item')) { event.preventDefault(); document.activeElement.click(); }
+  });
+  requestAnimationFrame(() => {
+    focusMenu(0);
+    window.MidnightMotion?.menuIntro(hero);
+  });
+
   document.querySelector('.midnight-brand').addEventListener('click', e => {
     // Do not navigate away from a running multiplayer match.
     e.preventDefault();
     window.scrollTo({ top: 0, behavior: reduce ? 'instant' : 'smooth' });
   });
 
-  const hero = document.querySelector('.midnight-hero');
   if (!reduce && matchMedia('(pointer: fine)').matches) {
     let frame = 0, x = 0, y = 0;
     hero.addEventListener('pointermove', e => {

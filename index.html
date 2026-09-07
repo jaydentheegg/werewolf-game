@@ -10,8 +10,8 @@
 <link rel="preload" as="image" href="assets/midnight-village.jpg" />
 <link rel="preload" as="image" href="assets/midnight-characters.webp" />
 <link rel="preload" as="image" href="assets/reliquary-frame.webp" />
-<link rel="stylesheet" href="style.css?v=37" />
-<link rel="stylesheet" href="midnight.css?v=37" />
+<link rel="stylesheet" href="style.css?v=38" />
+<link rel="stylesheet" href="midnight.css?v=38" />
 </head>
 <body>
 
@@ -72,15 +72,24 @@
 <section id="setup" class="screen">
   <div class="midnight-hero">
     <div class="hero-art" aria-hidden="true"></div>
-    <div class="hero-caption">一座村庄 · 一轮血月 · 无人无辜</div>
-    <div class="hero-copy">
-      <p class="eyebrow">A SOCIAL GAME OF BEAUTIFUL LIES</p>
-      <h1 class="midnight-wordmark">MID<span>NIGHT</span><i aria-hidden="true">✳</i></h1>
-      <p class="hero-chinese">天黑，<em>请闭眼。</em></p>
-      <p class="hero-line">每个人都有一张脸。<br>有人，还有另一张。</p>
-      <button id="enterVillage" class="enter-village" type="button" aria-controls="invitation">进入村庄 <span aria-hidden="true">↗</span><small>ENTER THE VILLAGE</small></button>
+    <div class="start-title">
+      <h1 class="midnight-wordmark">MIDNIGHT</h1>
+      <p>CHAPTER I: <span>THE VILLAGE AFTER DARK</span></p>
     </div>
-    <div class="hero-foot"><span>01 / 序章</span><a href="#cast">认识村民 <span aria-hidden="true">↓</span></a><span>6—12 位玩家 · 单机 / 联机</span></div>
+    <nav class="game-menu" aria-label="开始菜单">
+      <button id="enterVillage" class="game-menu-item is-active" type="button" data-menu-action="new" aria-controls="invitation"><i class="menu-brush" aria-hidden="true"></i><span class="menu-caret" aria-hidden="true">▶</span><span>NEW GAME</span><small>开始游戏</small></button>
+      <button class="game-menu-item" type="button" data-menu-action="multi"><i class="menu-brush" aria-hidden="true"></i><span class="menu-caret" aria-hidden="true">▶</span><span>MULTIPLAYER</span><small>真人联机</small></button>
+      <button class="game-menu-item" type="button" data-menu-action="how"><i class="menu-brush" aria-hidden="true"></i><span class="menu-caret" aria-hidden="true">▶</span><span>HOW TO PLAY</span><small>游戏规则</small></button>
+      <button class="game-menu-item" type="button" data-menu-action="settings"><i class="menu-brush" aria-hidden="true"></i><span class="menu-caret" aria-hidden="true">▶</span><span>SETTINGS</span><small>设置</small></button>
+      <button class="game-menu-item" type="button" data-menu-action="credits"><i class="menu-brush" aria-hidden="true"></i><span class="menu-caret" aria-hidden="true">▶</span><span>CREDITS</span><small>制作名单</small></button>
+    </nav>
+    <p class="start-meta">6—12 PLAYERS&nbsp;&nbsp;·&nbsp;&nbsp;SOLO / P2P MULTIPLAYER</p>
+    <div id="menuPanel" class="menu-panel" role="dialog" aria-modal="true" aria-labelledby="menuPanelTitle" hidden>
+      <button id="menuPanelClose" class="menu-panel-close" type="button" aria-label="关闭">×</button>
+      <p class="eyebrow">MIDNIGHT / 天黑，请闭眼</p>
+      <h2 id="menuPanelTitle"></h2>
+      <div id="menuPanelBody" class="menu-panel-body"></div>
+    </div>
   </div>
   <section class="cast-section" id="cast" aria-labelledby="castTitle">
     <div class="cast-heading"><p class="eyebrow">THE USUAL SUSPECTS / 村庄众生</p><h2 id="castTitle">好人，也有<em>秘密。</em></h2><p>五种身份。一场谎言。<br>你的故事，由夜晚决定。</p></div>
@@ -306,11 +315,11 @@
 <script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/gsap.min.js"
         integrity="sha384-HOvlOYPIs/zjoIkWUGXkVmXsjr8GuZLV+Q+rcPwmJOVZVpvTSXQChiN4t9Euv9Vc"
         crossorigin="anonymous" referrerpolicy="no-referrer"></script>
-<script src="motion.js?v=37"></script>
-<script src="net.js?v=37"></script>
-<script src="game.js?v=37"></script>
-<script src="compose.js?v=37"></script>
-<script src="fx.js?v=37"></script>
-<script src="midnight.js?v=37"></script>
+<script src="motion.js?v=38"></script>
+<script src="net.js?v=38"></script>
+<script src="game.js?v=38"></script>
+<script src="compose.js?v=38"></script>
+<script src="fx.js?v=38"></script>
+<script src="midnight.js?v=38"></script>
 </body>
 </html>

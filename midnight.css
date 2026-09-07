@@ -454,3 +454,112 @@ html[data-phase="day"] .action .btn { background: #080809; color: #d7d0c5; borde
 html.gsap-ready #game[data-stage="speech"] .table .card { transition: left 680ms cubic-bezier(.2,.8,.2,1), top 680ms cubic-bezier(.2,.8,.2,1); }
 html.gsap-ready #game[data-stage="speech"] .table .card.playing .avatar,
 html.gsap-ready .vote-card.casting { animation: none; }
+
+/* ============================================================
+   TITLE SCREEN — cinematic menu inspired by late-night game openings.
+   ============================================================ */
+body[data-screen="setup"] .topbar { position: absolute; opacity: 0; pointer-events: none; }
+body[data-screen="setup"] #setup { min-height: 100svh; }
+body[data-screen="setup"] .cast-section { display: none; }
+.midnight-hero {
+  min-height: 100svh; height: 100svh; overflow: hidden; background: #040708;
+}
+.midnight-hero .hero-art {
+  inset: -5%; background-position: 62% 50%; transform: scale(1.06);
+  filter: grayscale(.9) contrast(1.22) brightness(.42) blur(3px);
+}
+.midnight-hero::before {
+  content: ''; position: absolute; inset: 0; z-index: -1; pointer-events: none;
+  background: repeating-linear-gradient(0deg, #fff0 0 3px, #ffffff08 4px),
+              radial-gradient(circle at 66% 48%, #c8e4e424, transparent 29%);
+  mix-blend-mode: screen; opacity: .3;
+}
+.midnight-hero::after {
+  background: linear-gradient(90deg, #020405e6 0%, #0305068a 44%, transparent 76%),
+              linear-gradient(0deg, #020304cc, transparent 38%, #0203044d),
+              radial-gradient(circle at 78% 48%, transparent 0 22%, #0204056b 72%);
+}
+.start-title { position: absolute; z-index: 2; left: 4.5%; right: 3%; top: 2.2%; }
+.start-title .midnight-wordmark {
+  width: 100%; margin: 0; white-space: nowrap;
+  font-family: Impact, Haettenschweiler, 'Arial Narrow', sans-serif;
+  font-size: clamp(120px, min(28vw, 40vh), 500px); font-weight: 900; line-height: .78;
+  letter-spacing: -.055em; color: #f3f5f2; text-transform: uppercase;
+  text-shadow: 0 0 8px #eaf7f5, 0 0 28px #b8d3d3a8;
+  transform: scaleX(1.05); transform-origin: left top;
+}
+.start-title p {
+  margin: clamp(20px, 3vh, 36px) 0 0 1%; color: #d9e1df;
+  font: 300 clamp(14px, 2.05vw, 31px)/1.2 'Arial Narrow', 'Helvetica Neue', sans-serif;
+  letter-spacing: .44em; text-transform: uppercase; text-shadow: 0 0 11px #e5ffff99;
+}
+.start-title p span { color: #eef4f2; }
+.game-menu {
+  position: absolute; z-index: 5; left: 7%; top: 43%; width: min(430px, 42vw);
+  display: flex; flex-direction: column; align-items: stretch; gap: 3px;
+}
+.game-menu-item {
+  position: relative; display: grid; grid-template-columns: 26px auto 1fr; align-items: baseline;
+  min-height: 63px; padding: 7px 22px 8px; overflow: visible;
+  border: 0; background: transparent; color: #f0f2ef; cursor: pointer; text-align: left;
+  font: 300 clamp(29px, 3vw, 48px)/1 'Arial Narrow', 'Helvetica Neue', sans-serif;
+  letter-spacing: -.03em; isolation: isolate; transform-origin: left center;
+}
+.game-menu-item > span, .game-menu-item > small { position: relative; z-index: 2; }
+.game-menu-item small {
+  justify-self: end; font: 500 9px var(--font-ui); letter-spacing: .2em;
+  color: currentColor; opacity: 0; transition: opacity 160ms ease;
+}
+.game-menu-item .menu-caret { opacity: 0; font-size: .45em; align-self: center; }
+.game-menu-item .menu-brush {
+  position: absolute; z-index: 0; left: -13px; right: -10px; top: 2px; bottom: 2px;
+  background: #f2f3ef; clip-path: polygon(0 8%, 94% 0, 100% 18%, 97% 52%, 100% 84%, 89% 94%, 4% 100%, 0 84%);
+  transform: scaleX(0); transform-origin: left center; filter: drop-shadow(0 0 10px #dff3f388);
+}
+.game-menu-item.is-active { color: #08090a; }
+.game-menu-item.is-active .menu-brush { transform: scaleX(1); }
+.game-menu-item.is-active .menu-caret, .game-menu-item.is-active small { opacity: 1; }
+.game-menu-item:focus-visible { outline: 0; }
+.start-meta {
+  position: absolute; z-index: 4; left: 7%; bottom: 4.5%; margin: 0;
+  color: #aeb8b5; font: 9px var(--font-ui); letter-spacing: .23em;
+}
+.menu-panel {
+  position: absolute; z-index: 12; right: 5%; top: 39%; width: min(410px, 37vw);
+  min-height: 290px; padding: 34px 38px; background: #050708e8; color: #dfe4df;
+  border-left: 1px solid #dbe9e84d; box-shadow: -30px 0 80px #000a; backdrop-filter: blur(18px);
+}
+.menu-panel .eyebrow { color: #8ea29e; font-size: 8px; letter-spacing: .25em; }
+.menu-panel h2 { margin: 18px 0 25px; font: 300 38px 'Arial Narrow', sans-serif; letter-spacing: .05em; }
+.menu-panel-body { color: #aeb7b3; font-size: 12px; line-height: 1.9; }
+.menu-panel-body p { margin: 0 0 14px; }
+.menu-panel-note { color: #d5c19e; }
+.menu-panel-close {
+  position: absolute; right: 17px; top: 13px; width: 38px; height: 38px;
+  border: 0; background: transparent; color: #cbd3cf; font-size: 28px; cursor: pointer;
+}
+.panel-choice {
+  display: flex; justify-content: space-between; width: 100%; padding: 15px 0; margin-bottom: 18px;
+  border: 0; border-top: 1px solid #ffffff1c; border-bottom: 1px solid #ffffff1c;
+  background: transparent; color: #edf1ee; font: 16px 'Arial Narrow', sans-serif; letter-spacing: .12em; cursor: pointer;
+}
+.panel-choice span { color: #c5a678; }
+.invitation[data-entry="multi"] #btnCreate, .invitation[data-entry="multi"] #btnJoin,
+.entry-highlight { animation: entryPulse 900ms ease-in-out 2; }
+@keyframes entryPulse { 50% { background: #cfd8d2; color: #050607; box-shadow: 0 0 30px #cfe8e766; } }
+
+@media (max-width: 700px) {
+  .midnight-hero .hero-art { background-position: 68% center; filter: grayscale(.95) contrast(1.2) brightness(.36) blur(2px); }
+  .start-title { left: 5%; right: 2%; top: 4%; }
+  .start-title .midnight-wordmark { font-size: clamp(84px, 28vw, 122px); transform: scaleX(.78); }
+  .start-title p { margin-top: 18px; max-width: 92%; font-size: 10px; line-height: 1.8; letter-spacing: .3em; }
+  .game-menu { left: 7%; top: 39%; width: 78vw; }
+  .game-menu-item { min-height: 54px; padding: 7px 15px; font-size: clamp(27px, 9vw, 39px); grid-template-columns: 22px auto 1fr; }
+  .game-menu-item small { font-size: 7px; }
+  .start-meta { left: 7%; bottom: 3%; max-width: 80%; font-size: 7px; line-height: 1.7; }
+  .menu-panel { inset: auto 5% 8%; width: auto; min-height: 280px; padding: 28px 26px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .game-menu-item, .game-menu-item .menu-brush { transition: none !important; }
+}

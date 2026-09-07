@@ -85,5 +85,38 @@
     return true;
   }
 
-  window.MidnightMotion = { speech, voteTray, castVote };
+  function menuIntro(root) {
+    if (!root || reduce) return false;
+    const title = root.querySelector('.start-title');
+    const items = root.querySelectorAll('.game-menu-item');
+    const meta = root.querySelector('.start-meta');
+    const art = root.querySelector('.hero-art');
+    engine.timeline({ defaults: { ease: 'power3.out' } })
+      .fromTo(art, { scale: 1.16, filter: 'grayscale(1) contrast(1.4) brightness(.22) blur(9px)' }, { scale: 1.06, filter: 'grayscale(.9) contrast(1.22) brightness(.42) blur(3px)', duration: 1.7 }, 0)
+      .fromTo(title, { y: -45, opacity: 0 }, { y: 0, opacity: 1, duration: .8 }, .12)
+      .fromTo(items, { x: -70, opacity: 0 }, { x: 0, opacity: 1, duration: .52, stagger: .075 }, .36)
+      .fromTo(meta, { opacity: 0 }, { opacity: 1, duration: .5 }, .78);
+    return true;
+  }
+
+  function menuFocus(items, active) {
+    if (!items?.length || !active || reduce) return false;
+    items.forEach((item) => {
+      const selected = item === active;
+      const brush = item.querySelector('.menu-brush');
+      engine.to(item, { x: selected ? 12 : 0, color: selected ? '#08090a' : '#f0f2ef', duration: .24, ease: 'power2.out', overwrite: true });
+      if (brush) engine.to(brush, { scaleX: selected ? 1 : 0, duration: selected ? .3 : .18, ease: selected ? 'power3.out' : 'power2.in', overwrite: true });
+    });
+    return true;
+  }
+
+  function menuPanel(panel, opening) {
+    if (!panel || reduce) return false;
+    engine.killTweensOf(panel);
+    if (opening) engine.fromTo(panel, { x: 65, opacity: 0 }, { x: 0, opacity: 1, duration: .42, ease: 'power3.out' });
+    else engine.to(panel, { x: 45, opacity: 0, duration: .24, ease: 'power2.in' });
+    return true;
+  }
+
+  window.MidnightMotion = { speech, voteTray, castVote, menuIntro, menuFocus, menuPanel };
 })();
