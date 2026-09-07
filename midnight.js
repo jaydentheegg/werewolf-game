@@ -1,0 +1,168 @@
+/* Presentation only: consume the visible private view, never the host's game state. */
+(() => {
+  'use strict';
+  const $ = id => document.getElementById(id);
+  const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const setup = $('setup'), game = $('game'), overlay = $('overlay');
+  const invitation = $('invitation');
+
+  function enter() {
+    invitation.hidden = false;
+    invitation.scrollIntoView({ behavior: reduce ? 'instant' : 'smooth', block: 'start' });
+    $('nameInp').focus({ preventScroll: true });
+  }
+  $('enterVillage').addEventListener('click', enter);
+  $('castEnter').addEventListener('click', enter);
+  document.querySelector('.midnight-brand').addEventListener('click', e => {
+    // Do not navigate away from a running multiplayer match.
+    e.preventDefault();
+    window.scrollTo({ top: 0, behavior: reduce ? 'instant' : 'smooth' });
+  });
+
+  const hero = document.querySelector('.midnight-hero');
+  if (!reduce && matchMedia('(pointer: fine)').matches) {
+    let frame = 0, x = 0, y = 0;
+    hero.addEventListener('pointermove', e => {
+      const rect = hero.getBoundingClientRect();
+      x = ((e.clientX - rect.left) / rect.width - .5) * 12;
+      y = ((e.clientY - rect.top) / rect.height - .5) * 8;
+      if (frame) return;
+      frame = requestAnimationFrame(() => {
+        hero.style.setProperty('--hero-x', `${x}px`);
+        hero.style.setProperty('--hero-y', `${y}px`);
+        frame = 0;
+      });
+    }, { passive: true });
+    hero.addEventListener('pointerleave', () => {
+      x = y = 0;
+      hero.style.setProperty('--hero-x', '0px');
+      hero.style.setProperty('--hero-y', '0px');
+    });
+  }
+
+  // Sound is generated locally, opt-in and never needed to understand a turn.
+  let audio = null, soundOn = false;
+  function tone(freq = 174, duration = .35) {
+    if (!soundOn || !audio || document.hidden || audio.state !== 'running') return;
+    const oscillator = audio.createOscillator(), gain = audio.createGain();
+    oscillator.type = 'sine'; oscillator.frequency.value = freq;
+    gain.gain.setValueAtTime(0, audio.currentTime);
+    gain.gain.linearRampToValueAtTime(.035, audio.currentTime + .025);
+    gain.gain.exponentialRampToValueAtTime(.001, audio.currentTime + duration);
+    oscillator.connect(gain); gain.connect(audio.destination);
+    oscillator.start(); oscillator.stop(audio.currentTime + duration);
+    oscillator.onended = () => { oscillator.disconnect(); gain.disconnect(); };
+  }
+  $('soundToggle').addEventListener('click', async () => {
+    const button = $('soundToggle');
+    try {
+      if (!audio) {
+        const Audio = window.AudioContext || window.webkitAudioContext;
+        if (!Audio) throw new Error('No audio support');
+        audio = new Audio();
+      }
+      soundOn = !soundOn;
+      if (soundOn) await audio.resume(); else await audio.suspend();
+      button.setAttribute('aria-pressed', String(soundOn));
+      button.setAttribute('aria-label', soundOn ? '关闭音效' : '开启音效');
+      button.textContent = soundOn ? '声音 ON' : '声音 OFF';
+      tone(261.63);
+    } catch (_) {
+      soundOn = false;
+      button.textContent = '声音不可用';
+      button.setAttribute('aria-pressed', 'false');
+      button.setAttribute('aria-label', '当前浏览器声音不可用');
+    }
+  });
+
+  let currentScreen = '', chapterPhase = '';
+  function syncScreen() {
+    const screen = !game.classList.contains('hidden') ? 'game' : !setup.classList.contains('hidden') ? 'setup' : 'lobby';
+    if (currentScreen === screen) return;
+    currentScreen = screen;
+    document.body.dataset.screen = screen;
+    window.scrollTo({ top: 0, behavior: 'instant' });
+    if (screen === 'setup') {
+      invitation.hidden = true;
+      chapterPhase = '';
+      $('comicRecap').replaceChildren();
+    }
+  }
+  [setup, game, $('lobby')].forEach(el => new MutationObserver(syncScreen).observe(el, { attributes: true, attributeFilter: ['class'] }));
+  syncScreen();
+
+  function chapter() {
+    const phase = document.documentElement.dataset.phase || 'night';
+    const day = phase === 'day';
+    const round = $('stRound').textContent.trim();
+    $('chapterEyebrow').textContent = `${day ? 'THE TESTIMONIES' : 'THE SECRETS'} / ${round}`;
+    $('chapterTitle').textContent = day ? '天亮了。谁在说谎？' : '夜色有耳。';
+    $('chapterNote').textContent = day ? '每一句证词，都有分量。\n把你的一票，交给真相。' : '请保守你的秘密。\n黎明之前，故事尚未写完。';
+    if (phase !== chapterPhase && currentScreen === 'game') tone(day ? 349.23 : 146.83, .7);
+    chapterPhase = phase;
+  }
+  new MutationObserver(chapter).observe(document.documentElement, { attributes: true, attributeFilter: ['data-phase'] });
+  new MutationObserver(chapter).observe($('stRound'), { childList: true });
+  chapter();
+
+  // On a phone a twelve-seat table is taller than the viewport. Bring a new
+  // action into view once, without changing focus or reflowing the table.
+  new MutationObserver(() => {
+    if (currentScreen !== 'game' || !matchMedia('(max-width: 700px)').matches) return;
+    const action = $('action');
+    if (!action.querySelector('button, input')) return;
+    const rect = action.getBoundingClientRect();
+    if (rect.top > innerHeight - 100 || rect.bottom < 80) {
+      action.scrollIntoView({ block: 'center', behavior: reduce ? 'instant' : 'smooth' });
+    }
+  }).observe($('action'), { childList: true });
+
+  // The recap samples only public events already rendered to this player.
+  // It is created after the result overlay opens; private night logs are excluded.
+  let story = [];
+  let resultVisible = false;
+  function buildRecap() {
+    const visible = !overlay.classList.contains('hidden');
+    if (visible === resultVisible) return;
+    resultVisible = visible;
+    if (!visible) return;
+    const events = [...$('log').querySelectorAll('.logline.dead, .logline.day')]
+      .map(el => el.textContent.trim())
+      .filter(text => /昨夜|被放逐|被投票|开枪|计票结果|平票/.test(text));
+    const roles = [...$('ovRoles').children].map(el => el.textContent.trim()).join(' · ');
+    story = [
+      { label: 'I · 入夜', text: events[0] || '村庄入夜，每个人带着自己的秘密入席。' },
+      { label: 'II · 抉择', text: events.length > 1 ? events[events.length - 1] : '有人选择相信，有人选择沉默。最后的身份终于揭晓。' },
+      { label: 'III · 终章', text: $('ovTitle').textContent.trim() + ' ' + $('ovText').textContent.trim() },
+    ];
+    $('comicRecap').replaceChildren(...story.map(item => {
+      const article = document.createElement('article'); article.className = 'comic-panel';
+      const label = document.createElement('span'); label.textContent = item.label;
+      const p = document.createElement('p'); p.textContent = item.text;
+      article.append(label, p); return article;
+    }));
+    $('saveStory').dataset.roles = roles;
+    tone(392, .8);
+  }
+  new MutationObserver(buildRecap).observe(overlay, { attributes: true, attributeFilter: ['class'] });
+
+  $('saveStory').addEventListener('click', () => {
+    if (overlay.classList.contains('hidden') || !story.length) return;
+    const escape = value => String(value).replace(/[<>&"']/g, c => ({ '<': '&lt;', '>': '&gt;', '&': '&amp;', '"': '&quot;', "'": '&apos;' }[c]));
+    const wrap = (value, width) => {
+      const chars = Array.from(value); const lines = [];
+      for (let i = 0; i < chars.length; i += width) lines.push(chars.slice(i, i + width).join(''));
+      return lines;
+    };
+    const panels = story.map((item, i) => {
+      const lines = wrap(item.text, 23);
+      return `<g transform="translate(60 ${180 + i * 205})"><rect width="880" height="185" fill="#eee4ce"/><text x="25" y="38" font-size="22" fill="#953e2f">${escape(item.label)}</text>${lines.slice(0, 4).map((line, j) => `<text x="25" y="${77 + j * 25}" font-size="19" fill="#202728">${escape(line)}</text>`).join('')}</g>`;
+    }).join('');
+    const roleLines = wrap($('saveStory').dataset.roles || '', 40);
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="1000" height="${900 + roleLines.length * 25}" viewBox="0 0 1000 ${900 + roleLines.length * 25}"><rect width="100%" height="100%" fill="#121a1b"/><g font-family="Georgia, Songti SC, serif"><text x="60" y="88" font-size="62" fill="#eee4ce">MIDNIGHT</text><text x="62" y="133" font-size="19" fill="#ce9a72">天黑，请闭眼 · 本局故事</text>${panels}${roleLines.map((line, i) => `<text x="60" y="${855 + i * 25}" font-size="17" fill="#eee4ce">${escape(line)}</text>`).join('')}</g></svg>`;
+    const url = URL.createObjectURL(new Blob([svg], { type: 'image/svg+xml;charset=utf-8' }));
+    const link = document.createElement('a'); link.href = url; link.download = 'midnight-story.svg';
+    document.body.append(link); link.click(); link.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  });
+})();

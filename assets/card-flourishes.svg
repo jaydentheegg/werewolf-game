@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 340 480" fill="none">
+  <defs>
+    <linearGradient id="metal" x1="0" y1="0" x2="100" y2="90" gradientUnits="userSpaceOnUse"><stop stop-color="#9e651b"/><stop offset=".3" stop-color="#f5dd91"/><stop offset=".55" stop-color="#b47d25"/><stop offset=".8" stop-color="#ffe9a4"/><stop offset="1" stop-color="#91601c"/></linearGradient>
+    <g id="vine" stroke="url(#metal)" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M34 97C12 79 4 47 20 30 30 19 42 14 61 7 45 24 35 39 28 57 16 66 13 74 17 88"/>
+      <path d="M20 51C1 45 4 27 5 14 9 23 24 28 20 51Zm8-18C18 16 30 11 40 4 35 16 41 21 28 33ZM17 77C2 73 1 62 0 53 10 56 17 62 17 77Zm22-55C45 5 60 6 69 0 65 12 52 22 39 22Z" fill="url(#metal)"/>
+      <path d="M29 59C46 57 46 42 54 34 38 36 34 45 29 59Z" fill="#c4923f"/>
+      <path d="M25 30l6-7 7 7-7 9Z" fill="#8c1d19" stroke="#efca72"/>
+    </g>
+  </defs>
+  <use href="#vine" x="0" y="0"/><use href="#vine" transform="translate(340 0) scale(-1 1)"/>
+  <use href="#vine" transform="translate(0 480) scale(1 -1)"/><use href="#vine" transform="translate(340 480) scale(-1 -1)"/>
+  <path d="M144 26Q161 19 170 1 178 19 196 26L184 23 170 34 156 23Z" fill="url(#metal)" stroke="#e4be70" stroke-width="1.5"/>
+  <path d="M165 19l5-9 5 9-5 7Z" fill="#9d241e"/>
+</svg>

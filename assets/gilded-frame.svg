@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="300" height="360" viewBox="0 0 300 360" fill="none">
+  <defs>
+    <linearGradient id="gold" x1="0" y1="0" x2="300" y2="360" gradientUnits="userSpaceOnUse"><stop stop-color="#8c632e"/><stop offset=".23" stop-color="#f4dea0"/><stop offset=".48" stop-color="#b78b46"/><stop offset=".73" stop-color="#f5d696"/><stop offset="1" stop-color="#92703a"/></linearGradient>
+    <g id="corner" stroke="url(#gold)" stroke-width="1.5" stroke-linecap="round"><path d="M8 63V8h55M15 49V15h34M23 39V23h16"/><path d="M9 47c19-4 13-25 34-28-9 13-17 8-19 23-6-9-10-6-15 5Z"/><path d="M9 70c8-5 12-11 9-23M70 9c-5 8-11 12-23 9"/><path d="M13 13l8-3-3 8Z" fill="#dcc184"/></g>
+  </defs>
+  <path d="M6 78V6h288v348H6V78Z" stroke="url(#gold)" stroke-width="2.4"/>
+  <path d="M20 76V58M20 76v208m0 0v18m56 38h148m56-56V76M76 20h148" stroke="url(#gold)" stroke-width="1"/>
+  <use href="#corner"/><use href="#corner" transform="translate(300 0) scale(-1 1)"/><use href="#corner" transform="translate(0 360) scale(1 -1)"/><use href="#corner" transform="translate(300 360) scale(-1 -1)"/>
+  <g stroke="url(#gold)" stroke-width="1.2"><path d="M128 6l22 10 22-10M128 354l22-10 22 10M6 158l10 22-10 22m288-44-10 22 10 22"/><path d="M143 6l7 6 7-6M143 354l7-6 7 6" fill="#d9ba79"/></g>
+</svg>

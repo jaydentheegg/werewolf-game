@@ -355,7 +355,10 @@
     scope.querySelectorAll('.avatar').forEach((el) => {
       if (el.querySelector('.sigil')) return;
       const role = ROLE_BY_ICON[(el.textContent || '').trim()];
-      if (role) el.innerHTML = sigilSVG(role);
+      if (role) {
+        el.dataset.role = role;
+        el.innerHTML = `${sigilSVG(role)}<span class="portrait portrait-art" data-role="${role}" aria-hidden="true"></span>`;
+      }
     });
   }
   /* 角色配置：把 "🐺 狼人 ×3" 胶囊换成徽章 */
@@ -536,12 +539,22 @@
         const cards = [...table.querySelectorAll('.card')];
         const now = performance.now();
         const n = cards.length || 1;
+        if (table.dataset.seats !== String(n)) table.dataset.seats = String(n);
 
         cards.forEach((c, i) => {
           const id = c.dataset.id;
           /* 环形坐标（CSS 在 ≥1024px 时才使用） */
           setVar(c, '--i', i);
           setVar(c, '--n', n);
+          const angle = i / n * Math.PI * 2;
+          setVar(c, '--seat-x', `${50 + Math.sin(angle) * 40}%`);
+          setVar(c, '--seat-y', `${50 - Math.cos(angle) * 37}%`);
+          if (!c.querySelector('.card-ornament')) {
+            const ornament = document.createElement('span');
+            ornament.className = 'card-ornament';
+            ornament.setAttribute('aria-hidden', 'true');
+            c.appendChild(ornament);
+          }
           if (seen.has(id)) setCls(c, 'fx-seen', true); else seen.add(id);
           const t0 = dying.get(id);
           if (t0 != null) {
@@ -629,6 +642,11 @@
     idOpen = true;
     idPrevFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null;
     idCard.dataset.camp = meta.camp;
+    idCard.dataset.role = role;
+    const portrait = $('identityPortrait');
+    if (portrait) portrait.dataset.role = role;
+    const identityArt = $('identityArt');
+    if (identityArt) identityArt.dataset.role = role;
     $('identitySigil').innerHTML = sigilSVG(role);
     $('identityName').textContent = meta.name;
     $('identityCamp').textContent = meta.campName;

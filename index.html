@@ -3,10 +3,15 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-<title>天黑，请闭眼 · 狼人杀</title>
+<title>MIDNIGHT · 天黑，请闭眼</title>
 <meta name="theme-color" content="#07070a" />
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' fill='%2307070a'/><circle cx='50' cy='44' r='24' fill='%23e8e2d6'/><circle cx='62' cy='36' r='21' fill='%2307070a'/></svg>">
-<link rel="stylesheet" href="style.css?v=33" />
+<meta name="description" content="一座村庄，一轮血月。进入 MIDNIGHT，在会呼吸的暗黑绘本里，和朋友一起写下最后的真相。单机与多人狼人杀。" />
+<link rel="preload" as="image" href="assets/midnight-village.jpg" />
+<link rel="preload" as="image" href="assets/midnight-characters.webp" />
+<link rel="preload" as="image" href="assets/reliquary-frame.webp" />
+<link rel="stylesheet" href="style.css?v=35" />
+<link rel="stylesheet" href="midnight.css?v=35" />
 </head>
 <body>
 
@@ -57,27 +62,47 @@
 
 <!-- 顶栏 -->
 <header class="topbar">
-  <div class="title"><span class="title-mark" aria-hidden="true"></span>天黑，请闭眼</div>
-  <div id="phaseBadge" class="badge">准备中</div>
+  <a class="title midnight-brand" href="#setup" aria-label="MIDNIGHT 首页"><span class="title-mark" aria-hidden="true"></span>MIDNIGHT<span class="brand-small">天黑，请闭眼</span></a>
+  <div class="topbar-actions"><button id="soundToggle" class="sound-toggle" type="button" aria-pressed="false" aria-label="开启音效">声音 OFF</button><div id="phaseBadge" class="badge">准备中</div></div>
 </header>
 
 <!-- ============================================================
      主菜单 / 设置 —— 电影序幕版式
      ============================================================ -->
 <section id="setup" class="screen">
-  <div class="prologue">
+  <div class="midnight-hero">
+    <div class="hero-art" aria-hidden="true"></div>
+    <div class="hero-caption">一座村庄 · 一轮血月 · 无人无辜</div>
+    <div class="hero-copy">
+      <p class="eyebrow">A SOCIAL GAME OF BEAUTIFUL LIES</p>
+      <h1 class="midnight-wordmark">MID<span>NIGHT</span><i aria-hidden="true">✳</i></h1>
+      <p class="hero-chinese">天黑，<em>请闭眼。</em></p>
+      <p class="hero-line">每个人都有一张脸。<br>有人，还有另一张。</p>
+      <button id="enterVillage" class="enter-village" type="button" aria-controls="invitation">进入村庄 <span aria-hidden="true">↗</span><small>ENTER THE VILLAGE</small></button>
+    </div>
+    <div class="hero-foot"><span>01 / 序章</span><a href="#cast">认识村民 <span aria-hidden="true">↓</span></a><span>6—12 位玩家 · 单机 / 联机</span></div>
+  </div>
+  <section class="cast-section" id="cast" aria-labelledby="castTitle">
+    <div class="cast-heading"><p class="eyebrow">THE USUAL SUSPECTS / 村庄众生</p><h2 id="castTitle">好人，也有<em>秘密。</em></h2><p>五种身份。一场谎言。<br>你的故事，由夜晚决定。</p></div>
+    <div class="cast-gallery">
+      <article class="cast-card"><div class="portrait" data-role="wolf" role="img" aria-label="村民背后浮现狼影的插画"></div><span class="cast-number">I</span><h3>狼人 <small>THE WOLF</small></h3><p>微笑入席，带着獠牙离开。</p></article>
+      <article class="cast-card"><div class="portrait" data-role="seer" role="img" aria-label="蒙眼预言家插画"></div><span class="cast-number">II</span><h3>预言家 <small>THE SEER</small></h3><p>看见真相，未必有人相信。</p></article>
+      <article class="cast-card"><div class="portrait" data-role="witch" role="img" aria-label="手持两瓶药的女巫插画"></div><span class="cast-number">III</span><h3>女巫 <small>THE WITCH</small></h3><p>左手救赎，右手告别。</p></article>
+      <article class="cast-card"><div class="portrait" data-role="hunter" role="img" aria-label="持弩猎人插画"></div><span class="cast-number">IV</span><h3>猎人 <small>THE HUNTER</small></h3><p>最后一口气，留给反击。</p></article>
+      <article class="cast-card"><div class="portrait" data-role="villager" role="img" aria-label="举着蜡烛的村民插画"></div><span class="cast-number">V</span><h3>村民 <small>THE VILLAGER</small></h3><p>手无寸铁，仍有一票。</p></article>
+    </div>
+    <button class="text-link" id="castEnter" type="button">故事里，还缺一个你。 →</button>
+  </section>
+  <div class="prologue invitation" id="invitation" hidden>
 
     <div class="prologue-title">
-      <p class="eyebrow">村庄 · 第一夜</p>
-      <h1 class="mega">
-        <span class="mega-line">天黑</span>
-        <span class="mega-line mega-line--cut">请闭眼<i class="slash" aria-hidden="true"></i></span>
-      </h1>
+      <p class="eyebrow">YOUR INVITATION / 入夜邀请</p>
+      <h2 class="invitation-title">今夜，<br>为你<em>留座。</em></h2>
       <p class="lede">
-        八个人围坐，其中有人不是人。<br>
-        单机人机 or 同房间号真人联机 · 身份随机发放。
+        留下名字，把秘密带进村庄。<br>
+        和 AI 独自开局，或邀请朋友一起入夜。
       </p>
-      <div class="rule-row" aria-hidden="true"><span class="rule"></span><span class="rule-dot"></span></div>
+      <div class="invitation-seal" aria-hidden="true">M<span>午夜来信</span></div>
     </div>
 
     <div class="prologue-form panel">
@@ -204,6 +229,7 @@
      游戏界面 —— 圆桌审判
      ============================================================ -->
 <section id="game" class="screen hidden">
+  <div class="chapter-head"><div><p class="eyebrow" id="chapterEyebrow">CHAPTER I / 第一夜</p><h2 id="chapterTitle">夜色有耳。</h2></div><p id="chapterNote">请保守你的秘密。<br>黎明之前，故事尚未写完。</p></div>
   <div class="statusbar">
     <span id="stDay">☀️ 白天</span>
     <span class="st-sep" aria-hidden="true"></span>
@@ -232,7 +258,7 @@
   <!-- 事件卷宗 -->
   <div class="dossier">
     <div class="dossier-head">
-      <span class="dossier-title">事件卷宗</span>
+      <span class="dossier-title">村庄纪事 / CHRONICLE</span>
       <span class="dossier-rule" aria-hidden="true"></span>
     </div>
     <div id="logBox" class="logbox"><div id="log"></div></div>
@@ -255,6 +281,8 @@
     <h2 id="ovTitle"></h2>
     <p id="ovText"></p>
     <div id="ovRoles" class="ovroles"></div>
+    <div id="comicRecap" class="comic-recap" aria-label="本局故事回顾"></div>
+    <button id="saveStory" class="btn ghost" type="button">保存本局故事 ↓</button>
     <button id="againBtn" class="btn primary">再来一局 / 返回</button>
   </div>
 </div>
@@ -263,6 +291,9 @@
 <div id="identityOverlay" class="idcard-stage hidden" role="dialog" aria-modal="true"
      aria-labelledby="identityName" aria-describedby="identityDesc">
   <div id="identityCard" class="idcard" data-camp="good">
+    <span class="card-ornament" aria-hidden="true"></span>
+    <p class="identity-letter">FOR YOUR EYES ONLY / 只属于你的秘密</p>
+    <div id="identityPortrait" class="identity-portrait" aria-hidden="true"><span id="identityArt" class="portrait"></span></div>
     <div id="identitySigil" class="idcard-sigil" aria-hidden="true"></div>
     <div id="identityName" class="idcard-name"></div>
     <div id="identityCamp" class="idcard-camp"></div>
@@ -272,9 +303,10 @@
   </div>
 </div>
 
-<script src="net.js?v=33"></script>
-<script src="game.js?v=33"></script>
-<script src="compose.js?v=33"></script>
-<script src="fx.js?v=33"></script>
+<script src="net.js?v=35"></script>
+<script src="game.js?v=35"></script>
+<script src="compose.js?v=35"></script>
+<script src="fx.js?v=35"></script>
+<script src="midnight.js?v=35"></script>
 </body>
 </html>
