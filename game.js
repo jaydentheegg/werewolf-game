@@ -165,9 +165,12 @@ function widgetPick({ title, hint, opts }) {
         b.style.setProperty('--vote-y', `${boxRect.top + boxRect.height / 2 - cardRect.top - cardRect.height / 2}px`);
         b.classList.add('casting');
         const finishVote = () => {
-          elAction.className = 'action';
-          elAction.innerHTML = '';
-          elGame.dataset.stage = 'table';
+          // 动画期间面板可能已被收起（超时 cancel）或换成了新的询问，别把新面板一起清掉
+          if (b.isConnected) {
+            elAction.className = 'action';
+            elAction.innerHTML = '';
+            elGame.dataset.stage = 'table';
+          }
           resolve(opt.value);
         };
         const animated = window.MidnightMotion?.castVote(b, box, finishVote);
@@ -227,12 +230,14 @@ function pubVeil(text, cls = '', ms = 1400) {
 function privTo(seat, html, cls = '', veil = null) {
   if (seat === HOST_SEAT || MODE === 'solo') {
     addLog(html, cls);
-    if (veil) veilSync(veil.text, veil.cls || '', 1800);
+    // 本地遮罩要让调用方 await：不等的话，紧接着的下一张遮罩会在同一帧把它盖掉
+    if (veil) return veilSync(veil.text, veil.cls || '', 1800);
   } else {
     const p = G.players[seat];
     if (p && p.peerId && Net) sendTo(p.peerId, { kind: 'line', html, cls });
     if (veil && p && p.peerId && Net) sendTo(p.peerId, { kind: 'veil', text: veil.text, cls: veil.cls || '' });
   }
+  return Promise.resolve();
 }
 
 /* ============================================================
@@ -298,7 +303,8 @@ function flushSeatAsks(seat) {
 
 function askSeat(kind, seat, spec) {
   const p = G.players[seat];
-  if (!p || p.isBot) return Promise.resolve(null);
+  // gone = 已掉线：直接跳过，别每轮都空等 120 秒超时
+  if (!p || p.isBot || p.gone) return Promise.resolve(null);
   if (!p.peerId || MODE === 'solo') {
     // 本地真人座位（房主自己 / 单机玩家）
     return kind === 'pick'
@@ -308,13 +314,20 @@ function askSeat(kind, seat, spec) {
   // 远端真人
   return new Promise((resolve) => {
     const askId = 'a' + (++askSeq);
+    const allowed = kind === 'pick' ? spec.opts.map(o => o.value) : null;
     pendingAsks[askId] = {
       seat,
+      peerId: p.peerId,
+      // 远端回答不可信：pick 只收给出的选项，text 只收截断后的字符串
+      clean: (v) => kind === 'pick'
+        ? (allowed.includes(v) ? v : null)
+        : (typeof v === 'string' ? v.trim().slice(0, 60) : ''),
       resolve: (v) => { clearTimeout(pendingAsks[askId].timer); delete pendingAsks[askId]; resolve(v); },
       timer: setTimeout(() => {
-        // 120 秒没操作 → 自动跳过（记为 null），避免卡局
+        // 120 秒没操作 → 自动跳过（记为 null），避免卡局；并让对方收起过期的操作面板
         pendingAsks[askId].resolve(null);
-        broadcast({ kind: 'line', html: `⏰ <b>${esc(p.name)}</b> 长时间未操作，本回合自动跳过。`, cls: 'sys' });
+        sendTo(p.peerId, { kind: 'cancel', askId });
+        pubLog(`⏰ <b>${esc(p.name)}</b> 长时间未操作，本回合自动跳过。`, 'sys');
       }, 120000),
     };
     sendTo(p.peerId, { kind: 'ask', askId, kind2: kind, spec });
@@ -574,7 +587,7 @@ async function nightPhase() {
         if (t && t.alive && t.id !== seer.id) {
           const isWolf = t.role === 'wolf';
           t.seerMark = isWolf ? 'wolf' : 'good';
-          privTo(seer.id,
+          await privTo(seer.id,
             `<span class="who">🔮 你</span> 查验了 ${esc(t.name)}：<b>${isWolf ? '🐺 狼人' : '✅ 好人'}</b>`,
             'night',
             { text: isWolf ? '🔮 查到了：🐺 狼人！' : '🔮 查到了：✅ 好人', cls: isWolf ? 'wolf' : 'day' });
@@ -606,7 +619,8 @@ async function nightPhase() {
           title: '🧪 你是女巫，今晚有人被袭击了',
           hint: `被袭击的是：<b>${esc(victim.name)}</b>。是否使用解药？（跳过 = 不使用）`,
           opts: [
-            { label: victim.id === witch.id ? '💊 救自己' : `💊 救 ${esc(victim.name)}`, value: true, cls: 'ok' },
+            // label 由 widgetPick 用 textContent 写入，这里不能再 esc()，否则名字里的 & < 会显示成实体
+            { label: victim.id === witch.id ? '💊 救自己' : `💊 救 ${victim.name}`, value: true, cls: 'ok' },
             { label: '不救', value: false, cls: 'ghost' },
           ],
         });
@@ -622,7 +636,7 @@ async function nightPhase() {
           title: '🧪 是否使用毒药？（可跳过）',
           hint: '选择要毒杀的目标：',
           opts: [{ label: '☠️ 不使用毒药', value: null, cls: 'ghost' }].concat(
-            targets.map(p => ({ label: esc(p.name), value: p.id, cls: 'danger' }))
+            targets.map(p => ({ label: p.name, value: p.id, cls: 'danger' }))
           ),
         });
         if (typeof pv === 'number') {
@@ -794,9 +808,9 @@ function startLocalGame(n) {
   MODE = 'solo';
   Net = null;
   roomNet = null;
-  const name = $('nameInp').value.trim();
-  dealGame(n, [{ peerId: null, name: '你' }]);
-  if (name && n > 0) G.players[0].name = '你'; // 单机固定用"你"
+  // 邀请页的 NAME 行填了就用它，没填才叫"你"
+  const name = $('nameInp').value.trim().slice(0, 12);
+  dealGame(n, [{ peerId: null, name: name || '你' }]);
   beginPlay(n);
 }
 
@@ -921,17 +935,25 @@ async function clientStart(msg) {
   addLog(`<span class="who">系统</span>：${html}`, 'sys');
 }
 
+let clientAskId = null;   // 客户端当前显示的是哪一次询问（房主超时后会发 cancel 收起它）
 function clientAsk(msg) {
   const spec = msg.spec;
+  clientAskId = msg.askId;
+  const answer = (v) => {
+    if (clientAskId === msg.askId) clientAskId = null;
+    if (Net) sendTo(Net.hostPeerId, { kind: 'answer', askId: msg.askId, value: v });
+  };
   if (msg.kind2 === 'pick') {
-    widgetPick({ title: spec.title, hint: spec.hint, opts: spec.opts }).then((v) => {
-      sendTo(Net.hostPeerId, { kind: 'answer', askId: msg.askId, value: v });
-    });
+    widgetPick({ title: spec.title, hint: spec.hint, opts: spec.opts }).then(answer);
   } else {
-    widgetText({ title: spec.title, hint: spec.hint, placeholder: spec.placeholder }).then((v) => {
-      sendTo(Net.hostPeerId, { kind: 'answer', askId: msg.askId, value: v });
-    });
+    widgetText({ title: spec.title, hint: spec.hint, placeholder: spec.placeholder }).then(answer);
   }
+}
+function clientCancel(askId) {
+  if (askId !== clientAskId) return;
+  clientAskId = null;
+  elAction.innerHTML = '';
+  elAction.className = 'action';
 }
 
 /* ============================================================
@@ -972,7 +994,12 @@ function updateLobbyControls() {
       opt.disabled = val < humans;
       if (val === humans) anyDisabled = true;
     }
-    if (humans > parseInt(cntSel.value, 10)) cntSel.value = String(Math.min(humans, 12));
+    if (humans > parseInt(cntSel.value, 10)) {
+      cntSel.value = String(Math.min(humans, 12));
+      // 程序改值不会触发 change：手动派发，让 compose.js 按新人数重新校验阵容
+      // （否则自定义阵容长度对不上，compFor() 会悄悄退回默认表）
+      cntSel.dispatchEvent(new Event('change'));
+    }
     if (humans < 2) {
       startBtn.disabled = true;
       status.textContent = '需要至少 2 名真人才能开局（当前 1 人：你自己）';
@@ -1058,7 +1085,15 @@ async function createRoom() {
     const m = data;
     if (m.kind === 'hello') {
       if (G && !G.over) { sendTo(peerId, { kind: 'busy', text: '本局已在进行中，无法加入。' }); return; }
-      if (greeted.has(peerId)) return;
+      if (greeted.has(peerId)) {
+        // 已入座的人又来打招呼（没收到 welcome）：补发一次，不重复入座
+        const i = roster.findIndex(e => e.peerId === peerId);
+        if (i >= 0) {
+          sendTo(peerId, { kind: 'welcome', order: i + 1, hostName });
+          sendTo(peerId, { kind: 'roster', list: roster });
+        }
+        return;
+      }
       greeted.add(peerId);
       const name = (m.name || '玩家').toString().slice(0, 12);
       if (roster.length >= 12) { sendTo(peerId, { kind: 'busy', text: '房间已满（最多 12 人）。' }); return; }
@@ -1074,8 +1109,9 @@ async function createRoom() {
       const name = String(m.name || '').trim().slice(0, 12);
       if (e && name) { e.name = name; renderRoster(); }
     } else if (m.kind === 'answer') {
+      // 只认被问的那个人；答案不在选项里就按跳过处理（否则一个坏值就能让房主主循环抛错卡死）
       const a = pendingAsks[m.askId];
-      if (a && a.seat !== HOST_SEAT) a.resolve(m.value);
+      if (a && a.seat !== HOST_SEAT && a.peerId === peerId) a.resolve(a.clean(m.value));
     }
   };
   pubLobbyLog(`🎉 ${hostName} 创建了房间`);
@@ -1120,12 +1156,14 @@ function pubLobbyLog(text) {
 
 /* ---- 加入房间（客户端） ---- */
 async function joinRoom(code) {
-  if (!(await netReadyWait())) { alert('联机模块加载失败：请确认能联网后刷新页面重试（单机不受影响）。'); return; }
-  hostName = nickName();
   const c = normCode(code);
   if (c.length < 3) { alert('房间号格式不对，请重新输入。'); return; }
+  if (!(await netReadyWait())) { alert('联机模块加载失败：请确认能联网后刷新页面重试（单机不受影响）。'); return; }
+  // 校验都过了才离开当前房间——先离开再报错，房主会留在一个已经失效的"僵尸大厅"里
+  if (Net) leaveNetRoom();
+  hostName = nickName();
   let room;
-  try { room = netJoinRoom('ww-' + c); } catch (e) { alert('加入房间失败：' + e.message); return; }
+  try { room = netJoinRoom('ww-' + c); } catch (e) { alert('加入房间失败：' + e.message); showScreen('setup'); return; }
 
   Net = {
     room,
@@ -1140,38 +1178,46 @@ async function joinRoom(code) {
   const sayHello = () => {
     helloSeq++;
     if (helloSeq > 10) {
-      $('mpStatus').textContent = '⏳ 找不到房主，房间号可能错误…';
+      clearInterval(Net._helloTimer);
+      $('mpStatus').textContent = '⏳ 暂时找不到房主（房间号可能有误），房主上线后会自动连上…';
       return;
     }
     broadcast({ kind: 'hello', name: hostName });
+  };
+
+  // 定时广播在连接建立前会直接丢失；谁连上来就当面再打一次招呼，
+  // 否则 P2P 连接慢于 ~15 秒时永远等不到 welcome
+  room.onPeerJoin = (peerId) => {
+    if (Net && Net.room === room && !Net.hostPeerId) sendTo(peerId, { kind: 'hello', name: hostName });
   };
 
   roomNet.onMessage = (data, { peerId }) => {
     if (MODE !== 'client') return;
     if (!data || typeof data !== 'object') return;
     const m = data;
+    // 房主以第一个 welcome 为准；之后只认它发来的消息，别人没法冒充房主往页面里写 HTML
+    const fromHost = peerId === Net.hostPeerId;
     if (m.kind === 'welcome') {
+      if (Net.hostPeerId && !fromHost) return;
       Net.hostPeerId = peerId;
       enterLobby();
       $('mpStatus').textContent = '已连接房主，请点“准备”。';
       myReady = false;
-    } else if (m.kind === 'roster') {
-      // 只有房主会广播名单；若房主身份尚未确认，顺势认领
-      if (!Net.hostPeerId) Net.hostPeerId = peerId;
-      roster = m.list;
-      renderRoster();
     } else if (m.kind === 'busy') {
+      if (Net.hostPeerId && !fromHost) return;
       if (m.text) alert(m.text);
       leaveNetRoom();
       showScreen('setup');
-    } else if (peerId === Net.hostPeerId) {
-      if (m.kind === 'line') addLog(m.html, m.cls);
+    } else if (fromHost) {
+      if (m.kind === 'roster') { roster = m.list; renderRoster(); }
+      else if (m.kind === 'line') addLog(m.html, m.cls);
       else if (m.kind === 'veil') veilFlash(m.text, m.cls);
       else if (m.kind === 'view') { if (MY) clientPaint(m.v); }
       else if (m.kind === 'speaker') clientSpeaker(m.id);
       else if (m.kind === 'stage') elGame.dataset.stage = m.stage || 'table';
       else if (m.kind === 'start') clientStart(m);
       else if (m.kind === 'ask') clientAsk(m);
+      else if (m.kind === 'cancel') clientCancel(m.askId);
       else if (m.kind === 'over') showOverlayClient(m);
     }
   };
@@ -1215,8 +1261,9 @@ function showOverlayClient(m) {
 
 function peerLeaveInGame(peerId) {
   const p = G.players.find(x => x.peerId === peerId);
-  flushSeatAsks(p ? p.id : -1);
   if (!p) return;
+  p.gone = true;   // 之后轮到他时 askSeat 直接跳过
+  flushSeatAsks(p.id);
   pubLog(`📴 <b>${esc(p.name)}</b> 掉线了（本局将自动跳过其所有操作）。`, 'sys');
   syncViews();
 }
@@ -1244,9 +1291,8 @@ $('countSel').onchange = () => showRolePreview(parseInt($('countSel').value, 10)
 $('mpCountSel').onchange = () => updateLobbyControls();
 
 $('joinBtn').onclick = async () => {
-  if (Net) leaveNetRoom();
-  if (G && !G.over) { location.reload(); return; }
-  await joinRoom($('joinCodeInp').value);
+  if (!Net && G && !G.over) { location.reload(); return; }
+  await joinRoom($('joinCodeInp').value);   // 离开当前房间放在 joinRoom 的校验之后
 };
 
 $('mpStartBtn').onclick = () => {

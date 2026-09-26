@@ -55,5 +55,5 @@
 
 ## 改动纪律
 - 一个会话做一个功能；改完 commit（信息写清做了什么），关会话前更新 PROGRESS.md。
-- 改了 CSS/JS 记得 bump index.html 里的版本号 ?v=NN（当前全部 v=42）。
+- 改了 CSS/JS 记得 bump index.html 里的版本号 ?v=NN（当前全部 v=43）。
 - 别删历史文件；要并存就新建（例如 burn.js 就是新增而非改 fx.js）。

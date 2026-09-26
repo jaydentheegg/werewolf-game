@@ -79,7 +79,7 @@ body[data-screen="setup"] #fxCanvas, body[data-screen="lobby"] #fxCanvas { visib
 .chapter-head { grid-column: 1 / -1; grid-row: 1; display: flex; justify-content: space-between; align-items: end; margin: 0 0 22px; gap: 20px; }
 .chapter-head .eyebrow { font-size: 9px; margin-bottom: 10px; color: #dfb18a; }
 .chapter-head h2 { font: 500 clamp(30px, 4vw, 50px) var(--font-display); letter-spacing: .04em; }
-.chapter-head > p { color: var(--muted); font-size: 11px; line-height: 1.9; }
+.chapter-head > p { color: var(--muted); font-size: 11px; line-height: 1.9; white-space: pre-line; /* midnight.js 用 \n 换行 */ }
 #game .statusbar { grid-column: 1 / -1; grid-row: 2; margin-bottom: 24px; padding: 14px 0; border-color: var(--line); }
 #game .tablewrap { grid-column: 1; grid-row: 3 / 5; width: 100%; height: auto; min-height: 0; max-height: none; aspect-ratio: auto; margin: 0; }
 #game .ritual-disc { display: none; }

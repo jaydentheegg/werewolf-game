@@ -6,8 +6,10 @@
  * 这里用动态 import() 从 CDN 加载 Trystero（CDN 带 CORS 头，
  * file:// 页面同样可用），加载成功后写入 window.wwNet。
  * 加载需要联网；失败时仅禁用联机，单机不受影响。
+ * 版本锁在 0.25.x：game.js 依赖它的对象式 API（makeAction().send /
+ * .onMessage、room.onPeerJoin = fn），老版本是数组 / 函数式，升级前先核对。
  * ============================================================ */
-import('https://esm.run/trystero')
+import('https://esm.run/trystero@0.25')
   .then((m) => {
     window.wwNet = { joinRoom: m.joinRoom, selfId: m.selfId };
   })
