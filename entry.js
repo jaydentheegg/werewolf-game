@@ -66,7 +66,10 @@
   /* ---------- 键盘：上下选行，Esc 收起抽屉 ---------- */
   function activeMenu() {
     if (!lobby.classList.contains('hidden')) return $('mpMenu');
-    return invitation.hidden ? null : $('soloMenu');
+    // 邀请页在 #setup 里：开局后 #setup 被隐藏，但 invitation.hidden 仍是 false，
+    // 这时不能再接管上下键（否则对局里方向键全被 preventDefault 吞掉）
+    if (invitation.hidden || $('setup')?.classList.contains('hidden')) return null;
+    return $('soloMenu');
   }
   document.addEventListener('keydown', (event) => {
     const menu = activeMenu();
