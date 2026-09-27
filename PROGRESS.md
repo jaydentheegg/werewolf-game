@@ -4,7 +4,15 @@
 
 ## 当前功能：人物卡去掉画框（已实现 ✅）
 
-**git 状态（2026-09-27）：** 分支 claude/practical-cray-nxte8b，已 commit + push。版本号全量 bump 到 ?v=45。
+**git 状态（2026-09-27）：** 分支 claude/practical-cray-nxte8b，已 commit + push。版本号全量 bump 到 ?v=46。
+
+第二轮（用户从建议里挑了 1 / 4 / 7）：
+- 发言钟面整体下移 84px（.tablewrap 470→554、.table inset-top 84px、表盘弧线 72→156px）：放大的发言人卡顶
+  原来被裁掉 54px，XII 压在脸上；现在卡完整，XII 在它头顶（top 8px）。GSAP / --clock-x/y 都相对 .table，不受影响。
+- 身份卡遮罩背景 #11191b → #030304，与对局纯黑一致。
+- 发言输入框提示改短为「例：我是预言家，小明是狼」，1050px 宽（最窄桌面侧栏）也放得下。
+- 顺手修：白天旧规则 `html[data-phase="day"] #game .card` 的内描边优先级高过无框规则，
+  在半透明的出局卡上透出一圈框——已删。
 - 封面角色画廊：去掉 gilded-frame 细金框和卡片顶部分隔线；罗马数字加阴影直接压在插画上。
 - 身份卡：去掉 reliquary 金红画框、叶饰 .card-ornament、1px 描边和硬投影，改成柔和大阴影；
   文字不用再躲画框，内边距收小（桌面 40/32/30，手机 34/24/26）。.idcard-sigil 原本被画框盖住，一并隐藏。

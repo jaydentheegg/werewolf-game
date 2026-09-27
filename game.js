@@ -891,7 +891,7 @@ async function dayPhase() {
       const v = await askSeat('text', p.id, {
         title: '🗣️ 轮到你发言',
         hint: '可以说明身份 / 指出怀疑对象 / 带节奏，也可以直接跳过。',
-        placeholder: '例：我是预言家，昨晚查了小明确实是狼…',
+        placeholder: '例：我是预言家，小明是狼',
       });
       text = v;
       pubEvent({ k: 'speech', id: p.id, text: text || '' });
