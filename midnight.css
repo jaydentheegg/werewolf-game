@@ -45,9 +45,8 @@ body[data-screen="setup"] #fxCanvas, body[data-screen="lobby"] #fxCanvas { visib
 .cast-heading em, .invitation-title em { color: #a84130; font-style: normal; }
 .cast-heading > p:last-child { font-size: 11px; line-height: 1.8; color: #585a50; }
 .cast-gallery { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 17px; }
-.cast-card { position: relative; min-width: 0; padding-top: 8px; border-top: 1px solid #182526; }
+.cast-card { position: relative; min-width: 0; }
 .portrait, .card .avatar[data-role] { position: relative; background-image: url('assets/midnight-characters.webp'); background-size: 300% 200%; background-position: 100% 100%; background-repeat: no-repeat; aspect-ratio: 1; }
-.portrait::after { content: ''; position: absolute; inset: -5px; background: url('assets/gilded-frame.svg') center / 100% 100% no-repeat; pointer-events: none; }
 [data-role="wolf"].portrait, .card .avatar[data-role="wolf"] { background-position: 0 0; }
 [data-role="seer"].portrait, .card .avatar[data-role="seer"] { background-position: 50% 0; }
 [data-role="witch"].portrait, .card .avatar[data-role="witch"] { background-position: 100% 0; }
@@ -55,7 +54,7 @@ body[data-screen="setup"] #fxCanvas, body[data-screen="lobby"] #fxCanvas { visib
 [data-role="villager"].portrait, .card .avatar[data-role="villager"] { background-position: 50% 100%; }
 .cast-card .portrait { width: 100%; filter: saturate(.6); transition: filter 250ms, transform 250ms; }
 .cast-card:hover .portrait { filter: saturate(1); transform: translateY(-5px); }
-.cast-number { position: absolute; top: 18px; left: 10px; font: italic 14px Georgia, serif; color: #843124; }
+.cast-number { position: absolute; top: 10px; left: 12px; font: italic 14px Georgia, serif; color: #843124; text-shadow: 0 1px 6px #000; }
 .cast-card h3 { font: 600 18px var(--font-display); margin: 15px 0 8px; }
 .cast-card h3 small { display: block; font: 8px var(--font-ui); letter-spacing: .15em; margin-top: 6px; color: #7f4938; }
 .cast-card p { font-size: 10px; color: #54584f; line-height: 1.6; }
@@ -145,7 +144,7 @@ html[data-phase="day"] #game .card.dead::before { background: url('assets/gilded
 .veil { background: #121a1bf2; }
 .veilInner { font-family: var(--font-display); }
 .idcard-stage { padding: 20px; background: #11191bf5; overflow-y: auto; }
-.idcard { width: min(390px, 88vw); aspect-ratio: auto; padding: 20px 24px 22px; gap: 8px; background: #eee4ce; border: 1px solid #ad9776; box-shadow: 10px 12px 0 #070e10; animation: letterReveal 550ms var(--ease) both; }
+.idcard { width: min(390px, 88vw); aspect-ratio: auto; padding: 20px 24px 22px; gap: 8px; background: #eee4ce; border: 0; box-shadow: 0 30px 90px #000d; animation: letterReveal 550ms var(--ease) both; }
 .identity-letter { color: #83513d; font: 8px var(--font-ui); letter-spacing: .13em; margin-bottom: 4px; }
 .identity-portrait { width: min(245px, 35vh); flex-shrink: 0; }
 .idcard-sigil { position: absolute; top: 45px; right: 20px; width: 36px; height: 36px; padding: 9px; border-radius: 50%; background: #9a3e2c; box-shadow: 0 0 0 3px #9a3e2c44; }
@@ -234,26 +233,23 @@ html[data-phase="day"] #game .card.dead::before { background: url('assets/gilded
   background: linear-gradient(0deg, #0d191cfa 0%, #0d191ccb 23%, transparent 64%, #11191b25);
   pointer-events: none;
 }
-#game .table .card::before { inset: -4px; background-image: url('assets/reliquary-frame.webp'); z-index: 3; }
-.card-ornament { position: absolute; inset: -8% -7%; background: url('assets/card-flourishes.svg') center / 100% 100% no-repeat; pointer-events: none; z-index: 5; }
-.portrait::after, #game .table .card::before, .card-ornament { filter: brightness(.38) saturate(.28); }
+/* 人物卡不再加画框：画框层与叶饰一律不画，插画本身就是卡面。 */
+.card-ornament { display: none; }
 #game .table .card .nm { color: #f3e5c7; text-shadow: 0 1px 5px #000; margin: 0 2px 5px; }
 #game .table .card .meta, #game .table .card .meta b { color: #dacaa7; margin: 0 2px; }
 #game .table .card .tag { position: absolute; top: 8px; right: 8px; bottom: auto; background: #11191bdc; margin: 0; z-index: 4; border-color: #c7a15f; color: #edcf93; }
 #game .table .card .tag + .tag { top: 29px; }
 #game .table .card.dead .avatar { opacity: .65; filter: grayscale(.85); }
 #game .table .card.dead .portrait-art { background-position: 100% 100%; }
-html[data-phase="day"] #game .table .card::before { background-image: url('assets/reliquary-frame.webp'); }
 html[data-phase="day"] #game .table .card .tag { background: #11191bdc; color: #edcf93; }
-.idcard { height: min(620px, calc(100svh - 66px)); width: min(400px, 82vw); justify-content: flex-end; overflow: visible; isolation: isolate; padding: 55px 50px 86px; color: #f3e5c7; background: #172326; }
+.idcard { height: min(620px, calc(100svh - 66px)); width: min(400px, 82vw); justify-content: flex-end; overflow: visible; isolation: isolate; padding: 40px 32px 30px; color: #f3e5c7; background: #172326; }
 .idcard .identity-portrait { position: absolute; inset: 0; height: 100%; width: 100%; aspect-ratio: auto; transform: none; z-index: -2; overflow: hidden; background-image: none; }
 .idcard .identity-portrait .portrait { position: absolute; top: 0; left: 50%; height: 100%; width: auto; aspect-ratio: 1; transform: translateX(-50%); }
 .idcard .identity-portrait .portrait::after { display: none; }
 .idcard .identity-portrait::after { display: none; }
-.idcard::before { inset: -5px; width: auto; height: auto; border: 0; background: url('assets/reliquary-frame.webp') center / 100% 100% no-repeat; opacity: 1; z-index: 4; pointer-events: none; }
-.idcard::before { filter: brightness(.38) saturate(.28); }
+.idcard::before, .idcard .idcard-sigil { display: none; }
 .idcard::after { inset: 0; width: auto; height: auto; border: 0; background: linear-gradient(0deg, #101b1d 0%, #101b1df5 16%, #101b1dad 38%, transparent 68%, #101b1d99); opacity: 1; z-index: -1; }
-.idcard .identity-letter { position: absolute; top: 17%; left: 15%; right: 15%; color: #f3e5c7; }
+.idcard .identity-letter { position: absolute; top: 26px; left: 28px; right: 28px; color: #f3e5c7; text-shadow: 0 1px 6px #000; }
 .idcard .idcard-name { color: #f3e5c7; text-shadow: 0 2px 8px #000; }
 .idcard .idcard-camp { color: #dfb881; }
 .idcard .idcard-desc { color: #e5d7ba; }
@@ -262,7 +258,7 @@ html[data-phase="day"] #game .table .card .tag { background: #11191bdc; color: #
 .idcard .idcard-continue:hover { background: #3c3b2c; }
 #identityCard .idcard-continue { color: #e3d5b5; border-color: #665d43; }
 @media (max-width: 700px) {
-  .idcard { padding: 45px 42px 78px; }
+  .idcard { padding: 34px 24px 26px; }
   .idcard .idcard-name { font-size: 27px; }
   .idcard .idcard-desc { font-size: 11px; }
   #game .table { gap: 20px 15px; }
@@ -291,7 +287,6 @@ body, #setup, #lobby, #game, .cast-section, .invitation {
 .cast-section { border-top: 1px solid #ffffff0c; }
 .cast-heading h2, .cast-card h3, .invitation-title, .invitation .lede { color: #e7e2d8; }
 .cast-heading > p:last-child, .cast-card p, .invitation { color: #777873; }
-.cast-card { border-top-color: #ffffff12; }
 .cast-number, .cast-card h3 small, .cast-heading em, .invitation-title em,
 .cast-heading .eyebrow, .invitation .eyebrow { color: #82674a; }
 .invitation .prologue-form {

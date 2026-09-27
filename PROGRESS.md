@@ -2,9 +2,17 @@
 
 > 永久规则与项目地图看 CLAUDE.md。这里只写"现在改到哪、下一步做啥"。
 
-## 当前功能：AI 玩家接入 Claude、自己思考（已实现 ✅）
+## 当前功能：人物卡去掉画框（已实现 ✅）
 
-**git 状态（2026-09-27）：** 分支 claude/game-ai-opponent-thinking-fet57h，已 commit + push。
+**git 状态（2026-09-27）：** 分支 claude/practical-cray-nxte8b，已 commit + push。版本号全量 bump 到 ?v=45。
+- 封面角色画廊：去掉 gilded-frame 细金框和卡片顶部分隔线；罗马数字加阴影直接压在插画上。
+- 身份卡：去掉 reliquary 金红画框、叶饰 .card-ornament、1px 描边和硬投影，改成柔和大阴影；
+  文字不用再躲画框，内边距收小（桌面 40/32/30，手机 34/24/26）。.idcard-sigil 原本被画框盖住，一并隐藏。
+- 圆桌卡牌 v36 起就已无框，这次只删掉了已被覆盖掉的画框背景声明。
+- index.html 去掉 reliquary-frame.webp 的 preload（没人用了，省约 340KB）。素材文件保留未删。
+- 验证：Playwright 截图 1440 / 390 宽的画廊、身份卡、白天圆桌；无 pageerror；画框素材不再被请求。
+
+## 上一个功能：AI 玩家接入 Claude、自己思考（已实现 ✅）
 
 ### 这次做了什么（版本号全量 bump 到 ?v=44）
 - 新增 Node 服务（package.json / server/）：`npm start` 托管页面 + `/api/ai/*`；默认 claude-opus-5、
@@ -43,5 +51,6 @@
 - 燃烧转场 + 邀请页暗夜改版。
 - 开局清单改版。
 - 全量 bug 排查修复 13 项。
-- AI 玩家接入 Claude（本次）。
+- AI 玩家接入 Claude。
+- 人物卡去掉画框（本次）。
 - 更多历史见 git log。
