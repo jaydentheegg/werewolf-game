@@ -546,6 +546,41 @@
     let animatedSpeaker = null;
     let applying = false;          // 防止自身写入触发的递归观察
 
+    /* 暗身份的座位全是同一把空椅子。按座位号给每张卡一个固定"镜头"——缩放 / 平移 /
+     * 镜像 / 一处烛光——看起来是同一间议事厅的不同角落：旗帜、烛台、椅背狼首、月亮、坐垫……
+     * 只取决于座位号（公开信息），与身份无关，不泄露任何东西。
+     * 变量写在 .portrait-art 自己的 style 上：投票托盘复制头像 innerHTML 时会一起带走，
+     * 同一个座位在桌上和托盘里取景一致。有立绘的座位（自己 / 狼队友）只用镜像和小幅平移。
+     * 覆盖约束（卡片宽高比 ≈ 0.69）：|平移| ≤ (缩放 − 0.69) / (2 × 缩放)，1 − 缩放 ≤ 上移 ≤ 0。 */
+    const SEAT_FRAMES = [
+      // 缩放   平移%  上移%  镜像  烛光 x%, y%（画面坐标）
+      [1.12,    0,    -6,    1,   16, 40],   // 0 正面
+      [1.22,   15,    -4,    1,   14, 38],   // 1 左侧：旗帜、烛台
+      [1.22,  -15,    -4,    1,   84, 38],   // 2 右侧：披风、烛台
+      [1.5,     2,   -14,    1,   48, 30],   // 3 椅背狼首
+      [1.3,     0,     0,   -1,   50, 12],   // 4 月亮与横幅
+      [1.36,    8,   -34,    1,   40, 72],   // 5 红坐垫
+      [1.42,  -21,   -22,    1,   86, 40],   // 6 右侧雕像与烛
+      [1.42,   21,   -28,   -1,   12, 44],   // 7 左侧雕像与烛
+      [1.22,   15,    -8,   -1,   14, 38],   // 8 左侧（镜像）
+      [1.6,   -20,   -22,   -1,   66, 38],   // 9 胸针与披风
+      [1.3,    12,   -18,   -1,   30, 60],   // 10 扶手
+      [1.4,   -14,   -38,   -1,   70, 70],   // 11 披风下摆与坐垫
+    ];
+    const frameSeat = (card) => {
+      const art = card.querySelector('.portrait-art');
+      const id = parseInt(card.dataset.id, 10);
+      if (!art || !(id >= 0)) return;
+      const [zoom, pan, top, flip, lx, ly] = SEAT_FRAMES[id % SEAT_FRAMES.length];
+      setVar(art, '--seat-zoom', `${zoom * 100}%`);
+      setVar(art, '--seat-pan', `${pan}%`);
+      setVar(art, '--seat-top', `${top}%`);
+      setVar(art, '--seat-flip', String(flip));
+      setVar(art, '--seat-nudge', `${Math.round(pan / 4)}%`);
+      setVar(art, '--seat-lx', `${lx}%`);
+      setVar(art, '--seat-ly', `${ly}%`);
+    };
+
     const onTable = () => {
       if (applying) return;
       applying = true;
@@ -596,6 +631,7 @@
           }
         });
         swapAvatars(table);
+        cards.forEach(frameSeat);
 
         const speakerId = activeIndex >= 0 ? cards[activeIndex]?.dataset.id : null;
         if (speakerId && speakerId !== animatedSpeaker) {

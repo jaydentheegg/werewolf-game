@@ -62,11 +62,12 @@
 - 强调/灼痕：砖红 #d45a43 ~ #d95b45（血、狼眼、燃烧）；旧纸 #dfb18a。
 - 字标：Georgia serif，负字距（letter-spacing: -.085em 级别），全大写+中文副题。
 - 背景资产：assets/midnight-village.jpg（hero）、assets/midnight-characters.webp（立绘）、
-  assets/gilded-frame.svg（画框）。
+  assets/gilded-frame.svg（画框）。这两张大图是母版；页面实际引用 assets/web/ 下的压缩副本
+  （village → WebP q70；立绘 → 边缘淡出压在近黑底上去掉 alpha，WebP q80）。换图时两处都要更新。
 - 动效：unveil/riseIn 类关键帧 + GSAP；都尊重 prefers-reduced-motion。
 
 ## 改动纪律
 - 一个会话做一个功能；改完 commit（信息写清做了什么），关会话前更新 PROGRESS.md。
-- 改了 CSS/JS 记得 bump index.html 里的版本号 ?v=NN（当前全部 v=48）。
+- 改了 CSS/JS 记得 bump index.html 里的版本号 ?v=NN（当前全部 v=49）。
 - 改了 server/ 跑 `npm test`（不需要 API Key，Claude 一侧用本地假服务顶替）。
 - 别删历史文件；要并存就新建（例如 burn.js 就是新增而非改 fx.js）。

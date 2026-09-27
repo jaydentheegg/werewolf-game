@@ -20,7 +20,7 @@ button, a { -webkit-tap-highlight-color: transparent; }
 body[data-screen="setup"] #fxCanvas, body[data-screen="lobby"] #fxCanvas { visibility: hidden; }
 #setup { max-width: none; padding: 0; }
 .midnight-hero { position: relative; min-height: min(900px, calc(100svh - 76px)); isolation: isolate; overflow: hidden; background: #121a1b; }
-.hero-art { position: absolute; inset: -2%; z-index: -2; background: url('assets/midnight-village.jpg') center 49% / cover no-repeat; transform: translate3d(var(--hero-x, 0px), var(--hero-y, 0px), 0) scale(1.025); transition: transform 700ms ease-out; }
+.hero-art { position: absolute; inset: -2%; z-index: -2; background: url('assets/web/midnight-village.webp') center 49% / cover no-repeat; transform: translate3d(var(--hero-x, 0px), var(--hero-y, 0px), 0) scale(1.025); transition: transform 700ms ease-out; }
 .midnight-hero::after { content: ''; position: absolute; inset: 0; z-index: -1; background: linear-gradient(90deg, #11191bea, #11191b18 68%, transparent), linear-gradient(0deg, #11191b, transparent 22%); pointer-events: none; }
 .hero-caption { position: absolute; top: 30px; right: 4.5%; font: 10px var(--font-ui); letter-spacing: .25em; color: #dfd1b7; }
 .hero-copy { padding: clamp(70px, 9vh, 120px) 0 100px 7%; width: 64%; }
@@ -46,7 +46,7 @@ body[data-screen="setup"] #fxCanvas, body[data-screen="lobby"] #fxCanvas { visib
 .cast-heading > p:last-child { font-size: 11px; line-height: 1.8; color: #585a50; }
 .cast-gallery { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 17px; }
 .cast-card { position: relative; min-width: 0; }
-.portrait, .card .avatar[data-role] { position: relative; background-image: url('assets/midnight-characters.webp'); background-size: 300% 200%; background-position: 100% 100%; background-repeat: no-repeat; aspect-ratio: 1; }
+.portrait, .card .avatar[data-role] { position: relative; background-image: url('assets/web/midnight-characters.webp'); background-size: 300% 200%; background-position: 100% 100%; background-repeat: no-repeat; aspect-ratio: 1; }
 [data-role="wolf"].portrait, .card .avatar[data-role="wolf"] { background-position: 0 0; }
 [data-role="seer"].portrait, .card .avatar[data-role="seer"] { background-position: 50% 0; }
 [data-role="witch"].portrait, .card .avatar[data-role="witch"] { background-position: 100% 0; }
@@ -401,7 +401,7 @@ html[data-phase="day"] .action .btn { background: #080809; color: #d7d0c5; borde
 .vote-portrait .sigil { display: none; }
 .vote-portrait .portrait-art {
   position: absolute; top: -6%; left: 50%; height: 112%; width: auto; aspect-ratio: 1;
-  transform: translateX(-50%); background-image: url('assets/midnight-characters.webp');
+  transform: translateX(-50%); background-image: url('assets/web/midnight-characters.webp');
   background-size: 300% 200%; background-repeat: no-repeat;
 }
 .vote-portrait::after {
@@ -460,7 +460,7 @@ body[data-screen="setup"] #setup { min-height: 100svh; }
 }
 .midnight-hero .hero-art {
   inset: 0 0 0 auto; width: min(62%, 1180px);
-  background: url('assets/midnight-village.jpg') right center / cover no-repeat;
+  background: url('assets/web/midnight-village.webp') right center / cover no-repeat;
   transform: translate3d(var(--hero-x, 0px), var(--hero-y, 0px), 0) scale(1.03);
   filter: grayscale(.5) contrast(1.14) brightness(.42) saturate(.85);
   -webkit-mask-image: linear-gradient(90deg, transparent 0, #000 27%, #000 100%);
@@ -611,7 +611,7 @@ html:not(.gsap-ready) .cast-card:hover, html:not(.gsap-ready) .cast-card:focus {
 /* The village keeps bleeding in from the right, as on the cover. */
 .entry-screen .entry-bg {
   position: absolute; inset: 0; z-index: -1; pointer-events: none; display: block;
-  background: url('assets/midnight-village.jpg') right center / cover no-repeat;
+  background: url('assets/web/midnight-village.webp') right center / cover no-repeat;
   filter: grayscale(.55) contrast(1.12) brightness(.3) saturate(.85);
   -webkit-mask-image: linear-gradient(90deg, transparent 0, #000 62%);
   mask-image: linear-gradient(90deg, transparent 0, #000 62%);
@@ -930,4 +930,29 @@ html[data-phase="day"] #game .table { --card-tone: saturate(.95) sepia(.1) brigh
   #game::before, #game::after, #game .table .card .avatar { transition: none; }
   #game .table .card.fx-die, #game .table .card.fx-die .avatar,
   #game .table .card.fx-die .avatar::before, #game .table .card.fx-die::after { animation: none; }
+}
+
+/* ============================================================
+   SEAT FRAMES — v49
+   暗身份的座位原本是六把一模一样的空椅子。fx.js 按座位号在 .portrait-art 上写
+   --seat-*：同一间议事厅、不同的镜头（旗帜 / 烛台 / 椅背狼首 / 月亮 / 坐垫…）。
+   只看座位号，与身份无关；投票托盘复制头像时变量随之带走，两处取景一致。
+   ============================================================ */
+#game .table .card .avatar .portrait-art[data-role="unknown"],
+#game .table .card.dead .avatar .portrait-art,
+.vote-portrait .portrait-art[data-role="unknown"] {
+  top: var(--seat-top, -6%); height: var(--seat-zoom, 112%);
+  transform: translateX(calc(-50% + var(--seat-pan, 0%))) scaleX(var(--seat-flip, 1));
+}
+/* 有立绘的座位（自己 / 狼队友）：只镜像 + 小幅平移，脸不出画 */
+#game .table .card:not(.dead) .avatar .portrait-art:not([data-role="unknown"]),
+.vote-portrait .portrait-art:not([data-role="unknown"]) {
+  transform: translateX(calc(-50% + var(--seat-nudge, 0%))) scaleX(var(--seat-flip, 1));
+}
+/* 每个座位一处烛光，落在各自镜头里的烛台 / 月亮附近 */
+#game .table .card .avatar .portrait-art[data-role="unknown"]::after,
+.vote-portrait .portrait-art[data-role="unknown"]::after {
+  content: ''; display: block; position: absolute; inset: 0; pointer-events: none;
+  background: radial-gradient(circle at var(--seat-lx, 30%) var(--seat-ly, 40%), rgba(255, 176, 92, .26), transparent 36%);
+  mix-blend-mode: screen;
 }
