@@ -9,7 +9,9 @@
 - 打开方式：`npm start` → http://localhost:8787（AI 接入 Claude）；`npm run mock` 用离线模拟大脑。
   直接双击 index.html（file://）或任意静态服务器**必须仍然可用**——此时 AI 座位退回经典规则。
 - 前端依赖：仅 GSAP 3（CDN，带 SRI integrity）；GSAP 被屏蔽时游戏仍完整可用（降级到 CSS）。
-- 服务端依赖：仅 @anthropic-ai/sdk；Node ≥ 20.12。Key 放 .env（不提交）或环境变量。
+- 服务端依赖：仅 @anthropic-ai/sdk；Node ≥ 20.12。Key 可在页面 BRAIN 一栏填（服务端验证后换上，
+  勾「记住」写进 .env），也可以手写 .env（不提交）或设环境变量。**Key 只到本机服务为止：
+  不进 localStorage、不回传页面（只给打码尾巴）、不发给联机的其他人；只有本机来的请求能改 Key。**
 - 联机走 Trystero P2P（免服务器、房间号发现）；加载失败只禁用联机，单机不受影响。
   AI 座位只在房主页面上思考，只有房主需要跑服务。
 
@@ -33,7 +35,7 @@
 | midnight.css | 「封面/开场」视觉主题（深色村庄 hero、字标、角色画廊、ENTRY MENU 开局清单）|
 | game.js | 规则状态机：单机(本页=0号玩家+AI)、联机(房主=权威)、回合/行动/胜负；AI 座位的记忆与决策校验 |
 | ai.js | 浏览器端 AI 接入层：探测 /api/ai、decide() 发请求（并发闸门 + 连续失败暂停重连）、BRAIN 抽屉，写 window.wwAI |
-| server/index.js | Node 服务：托管静态页（不外露 server/、node_modules、点文件）+ /api/ai/status、/api/ai/decide |
+| server/index.js | Node 服务：托管静态页（不外露 server/、node_modules、点文件）+ /api/ai/status、/api/ai/decide、/api/ai/key（页面填 / 移除 Key，改写 .env 只动 ANTHROPIC_API_KEY 一行）|
 | server/brain.js | 系统提示词、局面渲染、每个任务固定的 JSON schema、Claude 调用与结果校验 |
 | server/mock.js | 离线模拟大脑（`--mock` / AI_MOCK=1），测试与调样式用 |
 | midnight.js | 开场菜单交互：NEW GAME/MULTIPLAYER 入口、邀请页 reveal、menu panel |
@@ -67,6 +69,6 @@
 
 ## 改动纪律
 - 一个会话做一个功能；改完 commit（信息写清做了什么），关会话前更新 PROGRESS.md。
-- 改了 CSS/JS 记得 bump index.html 里的版本号 ?v=NN（当前全部 v=44）。
+- 改了 CSS/JS 记得 bump index.html 里的版本号 ?v=NN（当前全部 v=45）。
 - 改了 server/ 跑 `npm test`（不需要 API Key，Claude 一侧用本地假服务顶替）。
 - 别删历史文件；要并存就新建（例如 burn.js 就是新增而非改 fx.js）。

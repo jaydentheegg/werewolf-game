@@ -699,12 +699,12 @@ html:not(.gsap-ready) .cast-card:hover, html:not(.gsap-ready) .cast-card:focus {
   font: 500 10px 'Arial Narrow', var(--font-ui), sans-serif;
   letter-spacing: .26em; text-transform: uppercase; color: #c3ccc8;
 }
-.entry-drawer input[type="text"] {
+.entry-drawer input[type="text"], .entry-drawer input[type="password"] {
   width: 100%; padding: 13px 14px; min-height: 46px; font-size: 15px; font-family: inherit;
   background: #04060699; color: #edf1ef; border: 1px solid #ffffff1f; border-radius: 0;
   letter-spacing: .08em; outline: 0;
 }
-.entry-drawer input[type="text"]:focus { border-color: #dfe6e3; box-shadow: 0 0 0 1px #dfe6e32e; }
+.entry-drawer input[type="text"]:focus, .entry-drawer input[type="password"]:focus { border-color: #dfe6e3; box-shadow: 0 0 0 1px #dfe6e32e; }
 .entry-drawer input::placeholder { color: #6d7773; }
 
 /* Seat count: chips, not a dropdown. The <select> stays as the fallback
@@ -805,12 +805,23 @@ html:not(.gsap-ready) .cast-card:hover, html:not(.gsap-ready) .cast-card:focus {
 .ai-chips { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 16px; }
 .ai-chips .entry-chip { min-width: 0; padding: 11px 18px; font-size: 12px; letter-spacing: .18em; }
 .ai-chips .entry-mini[hidden] { display: none; }
-.entry-drawer .ai-reveal {
+.entry-drawer .ai-check {
   display: flex; align-items: flex-start; gap: 10px; margin: 0; cursor: pointer;
   font: 11px/1.8 var(--font-ui), sans-serif; letter-spacing: .08em; text-transform: none; color: #9aa4a0;
 }
-.entry-drawer .ai-reveal input { flex: none; margin: 5px 0 0; accent-color: #d95b45; }
-.entry-drawer .ai-reveal:has(input:disabled) { opacity: .4; cursor: not-allowed; }
+.entry-drawer .ai-check input { flex: none; margin: 5px 0 0; accent-color: #d95b45; }
+.entry-drawer .ai-check:has(input:disabled) { opacity: .4; cursor: not-allowed; }
+/* API Key：填一次，服务端记住；页面只显示打了码的尾巴 */
+.ai-key { margin: 0 0 18px; padding: 0 0 18px; border-bottom: 1px solid #ffffff14; }
+.ai-key[hidden], .ai-key [hidden] { display: none !important; }
+.ai-key .entry-join-row { margin-bottom: 12px; }
+.ai-key .entry-join-row input { letter-spacing: .08em; }
+.ai-key-current { margin: 0 0 12px; font: 13px var(--font-ui), sans-serif; letter-spacing: .08em; color: #d8dedb; }
+.entry-drawer .ai-key-msg { margin: 12px 0 0; }
+.entry-drawer .ai-key-msg.is-error { color: #e08a74; }
+.ai-key-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.ai-key-actions:not(:has(button:not([hidden]))) { display: none; }
+.ai-key-msg + .ai-key-actions { margin-top: 12px; }
 
 @media (max-width: 700px) {
   .entry-screen { padding: 40px 6% 52px; min-height: calc(100vh - 78px); }

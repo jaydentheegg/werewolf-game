@@ -311,35 +311,62 @@ export function createBrain({
   mock = false,
   timeoutMs = 45000,
   client = null,
+  clientOptions = {},             // 测试用：比如指向本地假 API 的 baseURL
   log = () => {},
 } = {}) {
   let anthropic = client;
   let compat = false;             // 网关 / 老模型拒收高级参数时降级成最朴素的请求
   let statusCache = null;         // {at, value}
 
+  // 不传 apiKey 时 SDK 自己从环境里找凭据（ANTHROPIC_API_KEY 等）
+  function makeClient(apiKey) {
+    return new Anthropic({ ...clientOptions, ...(apiKey ? { apiKey } : {}), timeout: timeoutMs, maxRetries: 1 });
+  }
   function getClient() {
-    if (!anthropic) anthropic = new Anthropic({ timeout: timeoutMs, maxRetries: 1 });
+    if (!anthropic) anthropic = makeClient();
     return anthropic;
   }
 
-  async function status() {
-    if (mock) return { ready: true, mock: true, model: 'mock（离线模拟）' };
-    const now = Date.now();
-    if (statusCache && now - statusCache.at < (statusCache.value.ready ? 300000 : 20000)) return statusCache.value;
-    let value;
+  /* 查一次模型信息，顺带验证凭据：不花 token */
+  async function check(c) {
     try {
-      await getClient().models.retrieve(model);
-      value = { ready: true, model };
+      await c.models.retrieve(model);
+      return { ready: true, model };
     } catch (err) {
       // 认证 / 权限 / 模型不存在 / 连不上 才算不可用；其他 API 错误（比如网关没实现
       // /v1/models）不代表不能对话，乐观放行，真出错时 game.js 会退回规则 AI
       const fatal = !(err instanceof Anthropic.APIError) ||
         err instanceof Anthropic.AuthenticationError || err instanceof Anthropic.PermissionDeniedError ||
         err instanceof Anthropic.NotFoundError || err instanceof Anthropic.APIConnectionError;
-      value = fatal ? { ready: false, model, reason: explain(err) } : { ready: true, model };
+      return fatal ? { ready: false, model, reason: explain(err) } : { ready: true, model };
     }
+  }
+
+  async function status() {
+    if (mock) return { ready: true, mock: true, model: 'mock（离线模拟）' };
+    const now = Date.now();
+    if (statusCache && now - statusCache.at < (statusCache.value.ready ? 300000 : 20000)) return statusCache.value;
+    const value = await check(getClient());
     statusCache = { at: now, value };
     return value;
+  }
+
+  /* 玩家在页面上填的 Key：先验证，能用才换上；不能用就保持原样并告诉原因 */
+  async function useKey(apiKey) {
+    const candidate = makeClient(apiKey);
+    const value = await check(candidate);
+    if (value.ready) {
+      anthropic = candidate;
+      compat = false;
+      statusCache = { at: Date.now(), value };
+    }
+    return value;
+  }
+  /* 忘掉页面填的 Key，回到环境里的凭据（调用方先把环境里该删的删掉） */
+  function resetKey() {
+    anthropic = null;
+    compat = false;
+    statusCache = null;
   }
 
   function requestBody(task, userText) {
@@ -388,7 +415,7 @@ export function createBrain({
     return normalizeDecision(task, raw, view);
   }
 
-  return { status, decide, get model() { return mock ? 'mock' : model; } };
+  return { status, decide, useKey, resetKey, get model() { return mock ? 'mock' : model; } };
 }
 
 export function explain(err) {

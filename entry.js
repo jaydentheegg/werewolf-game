@@ -43,7 +43,9 @@
     item?.setAttribute('aria-expanded', String(open));
     if (open) {
       setActive(row);
-      const first = drawer.querySelector('input, .entry-chip:not(:disabled), button');
+      // 抽屉里可能有暂时隐藏的控件（比如 API Key 表单），跳过看不见的
+      const first = [...drawer.querySelectorAll('input, .entry-chip:not(:disabled), button')]
+        .find((el) => el.getClientRects().length && !el.disabled);
       if (first && !reduce) setTimeout(() => first.focus({ preventScroll: true }), 40);
     }
   }

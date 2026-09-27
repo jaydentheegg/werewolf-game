@@ -10,8 +10,8 @@
 <link rel="preload" as="image" href="assets/midnight-village.jpg" />
 <link rel="preload" as="image" href="assets/midnight-characters.webp" />
 <link rel="preload" as="image" href="assets/reliquary-frame.webp" />
-<link rel="stylesheet" href="style.css?v=44" />
-<link rel="stylesheet" href="midnight.css?v=44" />
+<link rel="stylesheet" href="style.css?v=45" />
+<link rel="stylesheet" href="midnight.css?v=45" />
 </head>
 <body>
 
@@ -212,12 +212,29 @@
   <!-- AI 大脑：ai.js 负责状态文字与开关；game.js 只读 window.wwAI -->
   <div class="entry-part" data-part="brain">
     <p class="entry-note ai-status" id="aiStatus" role="status" aria-live="polite">正在寻找 AI 服务…</p>
+    <!-- API Key：只发给本机的游戏服务（server/index.js 的 /api/ai/key），页面上不留、不回显 -->
+    <div class="ai-key" id="aiKeyBox" hidden>
+      <p class="ai-key-current" id="aiKeyCurrent" hidden></p>
+      <div id="aiKeyForm" hidden>
+        <label for="aiKeyInp">ANTHROPIC API KEY</label>
+        <div class="entry-join-row">
+          <input type="password" id="aiKeyInp" placeholder="sk-ant-…" maxlength="400" autocomplete="off" spellcheck="false" />
+          <button type="button" id="aiKeySave" class="entry-mini">连接</button>
+        </div>
+        <label class="ai-check"><input type="checkbox" id="aiKeyRemember" checked /> <span>记住 —— 保存到运行服务这台电脑的 .env，下次启动自动接入</span></label>
+      </div>
+      <p class="entry-note ai-key-msg" id="aiKeyMsg" role="status" aria-live="polite" hidden></p>
+      <div class="ai-key-actions">
+        <button type="button" id="aiKeyChange" class="entry-mini" hidden>更换 Key</button>
+        <button type="button" id="aiKeyForget" class="entry-mini" hidden>移除 Key</button>
+      </div>
+    </div>
     <div class="ai-chips" role="group" aria-label="AI 玩家用什么来思考">
       <button type="button" class="entry-chip" data-ai-mode="on" aria-pressed="false">CLAUDE 思考</button>
       <button type="button" class="entry-chip" data-ai-mode="off" aria-pressed="false">经典规则</button>
       <button type="button" class="entry-mini" id="aiRetry" hidden>重新检测</button>
     </div>
-    <label class="ai-reveal"><input type="checkbox" id="aiReveal" /> <span>旁观心声 —— 把 AI 的内心独白实时写进纪事（仅单机生效，会剧透身份）</span></label>
+    <label class="ai-check"><input type="checkbox" id="aiReveal" /> <span>旁观心声 —— 把 AI 的内心独白实时写进纪事（仅单机生效，会剧透身份）</span></label>
   </div>
 </div>
 
@@ -441,14 +458,14 @@
 <script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/gsap.min.js"
         integrity="sha384-HOvlOYPIs/zjoIkWUGXkVmXsjr8GuZLV+Q+rcPwmJOVZVpvTSXQChiN4t9Euv9Vc"
         crossorigin="anonymous" referrerpolicy="no-referrer"></script>
-<script src="motion.js?v=44"></script>
-<script src="burn.js?v=44"></script>
-<script src="net.js?v=44"></script>
-<script src="ai.js?v=44"></script>
-<script src="game.js?v=44"></script>
-<script src="compose.js?v=44"></script>
-<script src="fx.js?v=44"></script>
-<script src="midnight.js?v=44"></script>
-<script src="entry.js?v=44"></script>
+<script src="motion.js?v=45"></script>
+<script src="burn.js?v=45"></script>
+<script src="net.js?v=45"></script>
+<script src="ai.js?v=45"></script>
+<script src="game.js?v=45"></script>
+<script src="compose.js?v=45"></script>
+<script src="fx.js?v=45"></script>
+<script src="midnight.js?v=45"></script>
+<script src="entry.js?v=45"></script>
 </body>
 </html>

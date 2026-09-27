@@ -27,12 +27,20 @@ AI 玩家接入 Claude，会自己记笔记、推理、伪装、发言和投票�
 
 ```bash
 npm install
-cp .env.example .env      # 填入 ANTHROPIC_API_KEY
 npm start
 ```
 
-然后打开 <http://localhost:8787/>。开局清单里的 **BRAIN** 一行会显示 AI 是否已接入，
-也可以在那里切回经典规则，或打开「旁观心声」（单机时把 AI 的内心独白实时写进纪事，会剧透）。
+然后打开 <http://localhost:8787/>，在开局清单的 **BRAIN** 一行里粘贴你的 Claude API Key，点「连接」即可。
+服务端会先用它查一次模型信息验证（不花 token），能用才换上。勾选「记住」会把它写进本机的 `.env`，下次启动自动接入；
+不勾就只在这次运行里有效。之后可以在同一处「更换 Key」或「移除 Key」。
+
+- Key 只发给这台电脑上的游戏服务：不会存进浏览器，服务端也从不把它回传给页面（页面上只显示 `sk-ant-…1234` 这样的尾巴），
+  更不会发给联机的其他玩家。
+- 只有坐在运行服务那台电脑前的人能填 / 改 Key；`HOST=0.0.0.0` 时局域网里的人能玩，但改不了 Key。
+- 也可以照旧写配置文件：`cp .env.example .env` 后填 `ANTHROPIC_API_KEY`，或直接设同名环境变量
+  （环境变量里的 Key 页面上删不掉，只能在终端里改）。
+
+BRAIN 一行还能切回经典规则，或打开「旁观心声」（单机时把 AI 的内心独白实时写进纪事，会剧透）。
 
 没有 API Key 也能玩：
 
@@ -43,7 +51,7 @@ npm start
 
 | 变量 | 默认 | 说明 |
 |---|---|---|
-| `ANTHROPIC_API_KEY` | — | Claude API Key |
+| `ANTHROPIC_API_KEY` | — | Claude API Key（也可以在页面上填） |
 | `AI_MODEL` | `claude-opus-5` | 模型 |
 | `AI_EFFORT` | `low` | 思考力度 `low` / `medium` / `high`，越高越会想，也越慢越贵 |
 | `AI_TIMEOUT` | `45` | 单次决策超时（秒），超时的座位这一次退回经典规则 |
@@ -65,7 +73,7 @@ npm test
 
 ## 项目结构
 
-- `server/index.js`：本地服务——托管页面，并提供 `/api/ai/*`（保管 API Key、替 AI 座位调用 Claude）
+- `server/index.js`：本地服务——托管页面，并提供 `/api/ai/*`（保管 / 验证页面填的 API Key、替 AI 座位调用 Claude）
 - `server/brain.js`：AI 的「大脑」——把某个座位能看到的局面写成提示词，用结构化输出拿回决定并校验
 - `server/mock.js`：离线模拟大脑（`npm run mock`）
 - `ai.js`：浏览器端的 AI 接入层，探测服务、发送决策请求、渲染 BRAIN 设置；连不上就让 AI 座位退回经典规则

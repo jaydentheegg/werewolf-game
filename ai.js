@@ -5,7 +5,8 @@
  *   1. 探测同源的 /api/ai（npm start 起的本地服务），可用状态写到 window.wwAI
  *   2. wwAI.decide(task, view)：把某个 AI 座位的视角发给服务端，拿回它的决定
  *      —— 局面由 game.js 组装，拿回的决定也由 game.js 再按规则校验
- *   3. 开局清单里 BRAIN 抽屉的内容（状态文字 + 开关），它在单机 / 大厅之间搬家
+ *   3. 开局清单里 BRAIN 抽屉的内容（状态文字 + API Key + 开关），它在单机 / 大厅之间搬家
+ *      —— Key 只发给本机的游戏服务，不存进浏览器（localStorage 里只有开关偏好）
  *
  * 直接双击 index.html（file://）或服务端没配好 Key 时：wwAI.online = false，
  * game.js 自动用经典规则 AI，游戏照常可玩。
@@ -33,6 +34,7 @@
     model: '',
     mock: false,
     reason: served ? '' : '当前是直接打开的 index.html，连不上 AI 服务',
+    key: null,                          // 服务端告诉的 Key 概况 {source, hint, editable}，不含 Key 本身
     enabled: prefs.enabled !== false,   // 玩家的开关：接入 AI / 经典规则
     reveal: prefs.reveal === true,      // 旁观心声（仅单机）
     failStreak: 0,
@@ -55,10 +57,7 @@
         const res = await fetch('api/ai/status', { cache: 'no-store', signal: ctl.signal });
         const j = res.ok ? await res.json() : null;
         if (!j || !j.ok) throw new Error(res.status === 404 ? 'no-server' : 'bad-status');
-        AI.online = !!j.ready;
-        AI.model = j.model || '';
-        AI.mock = !!j.mock;
-        AI.reason = j.ready ? '' : (j.reason || '服务端未就绪');
+        applyStatus(j);
       } catch (err) {
         AI.online = false;
         AI.reason = err && err.message === 'no-server'
@@ -73,6 +72,98 @@
       }
     })();
     return probing;
+  }
+
+  function applyStatus(j) {
+    AI.online = !!j.ready;
+    AI.model = j.model || '';
+    AI.mock = !!j.mock;
+    AI.reason = j.ready ? '' : (j.reason || '服务端未就绪');
+    AI.key = j.key && typeof j.key === 'object' ? j.key : null;
+  }
+
+  /* ---------- 在页面上填 / 换 / 移除 API Key ---------- */
+  let keyBusy = false;
+  let keyFormOpen = false;
+  let keyMsg = null;   // {text, error}
+
+  async function keyRequest(method, payload) {
+    const res = await fetch('api/ai/key', {
+      method,
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload || {}),
+    });
+    const j = await res.json().catch(() => null);
+    if (!res.ok || !j || !j.ok) throw new Error((j && j.error) || `HTTP ${res.status}`);
+    return j;
+  }
+
+  async function saveKey() {
+    const inp = $('aiKeyInp');
+    const apiKey = (inp && inp.value || '').trim();
+    if (!apiKey) { inp?.focus(); return; }
+    keyBusy = true;
+    keyMsg = { text: '正在验证这把 Key…' };
+    render();
+    try {
+      const j = await keyRequest('POST', { apiKey, remember: !!$('aiKeyRemember')?.checked });
+      applyStatus(j);
+      AI.failStreak = 0;
+      AI.pausedUntil = 0;
+      AI.enabled = true;          // 填了 Key 就是想让 AI 思考
+      savePrefs();
+      keyFormOpen = false;
+      keyMsg = { text: j.warning || '已连接 ✓ 下一局开始 AI 玩家就会用它思考。', error: !!j.warning };
+    } catch (err) {
+      keyMsg = { text: `没接上：${err.message}`, error: true };
+    } finally {
+      if (inp) inp.value = '';    // Key 不在页面上多留一秒
+      keyBusy = false;
+      render();
+    }
+  }
+
+  async function forgetKey() {
+    keyBusy = true;
+    render();
+    try {
+      applyStatus(await keyRequest('DELETE'));
+      keyMsg = { text: AI.online ? 'Key 已移除，改用服务端原有的凭据。' : 'Key 已移除。' };
+    } catch (err) {
+      keyMsg = { text: `移除失败：${err.message}`, error: true };
+    } finally {
+      keyBusy = false;
+      render();
+    }
+  }
+
+  const KEY_SOURCE = { env: '来自启动服务时的环境变量', file: '保存在本机 .env', page: '只在这次运行有效' };
+
+  function renderKey() {
+    const box = $('aiKeyBox');
+    if (!box) return;
+    const k = AI.key;
+    box.hidden = !served || AI.mock || !k;
+    if (box.hidden) return;
+    const hasKey = !!k.source;
+    const showForm = k.editable && (!AI.online || keyFormOpen);
+    $('aiKeyForm').hidden = !showForm;
+    const current = $('aiKeyCurrent');
+    current.hidden = !hasKey;
+    current.textContent = hasKey ? `当前 Key：${k.hint}（${KEY_SOURCE[k.source] || ''}）` : '';
+    const change = $('aiKeyChange');
+    change.hidden = !(k.editable && AI.online && !keyFormOpen);
+    change.textContent = hasKey ? '更换 Key' : '改用 API Key';
+    $('aiKeyForget').hidden = !(k.editable && hasKey && k.source !== 'env');
+    const msg = $('aiKeyMsg');
+    let text = keyMsg ? keyMsg.text : '';
+    if (!text && !k.editable) text = '只能在运行游戏服务的那台电脑上填写 API Key。';
+    if (!text && showForm) text = 'Key 只发给这台电脑上的游戏服务：不会存进浏览器，也不会发给其他玩家。还没有 Key 可以去 platform.claude.com 创建。';
+    msg.textContent = text;
+    msg.hidden = !text;
+    msg.classList.toggle('is-error', !!(keyMsg && keyMsg.error));
+    box.querySelectorAll('button, input').forEach((el) => { el.disabled = keyBusy; });
+    $('aiKeySave').textContent = keyBusy ? '验证中…' : '连接';
   }
 
   /* 简单的并发闸门 */
@@ -143,11 +234,14 @@
         status.textContent = AI.mock
           ? '已接入离线模拟大脑（不调用 API，只用来调试流程）。'
           : `已接入 ${AI.model}。AI 玩家会读公开记录、记私人笔记、自己推理，再决定怎么发言、投票和夜里行动。`;
+      } else if (AI.key && AI.key.editable) {
+        status.textContent = `AI 暂不可用：${AI.reason}。在下面填入 API Key 即可接入；不填的话 AI 座位使用经典规则。`;
       } else {
         status.textContent = `AI 暂不可用：${AI.reason}。AI 座位会使用经典规则。` +
           (served ? '' : '在项目目录运行 npm start，然后打开 http://localhost:8787 即可接入。');
       }
     }
+    renderKey();
     document.querySelectorAll('[data-ai-mode]').forEach((b) => {
       const on = b.dataset.aiMode === 'on';
       const pressed = on ? AI.active : !AI.active;
@@ -178,6 +272,15 @@
     render();
   });
   $('aiRetry')?.addEventListener('click', () => probe());
+  $('aiKeySave')?.addEventListener('click', saveKey);
+  $('aiKeyInp')?.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); saveKey(); } });
+  $('aiKeyForget')?.addEventListener('click', forgetKey);
+  $('aiKeyChange')?.addEventListener('click', () => {
+    keyFormOpen = true;
+    keyMsg = null;
+    render();
+    $('aiKeyInp')?.focus();
+  });
 
   probe();
 })();

@@ -3,6 +3,9 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import http from 'node:http';
 import { spawn } from 'node:child_process';
+import { mkdtemp, readFile, writeFile } from 'node:fs/promises';
+import os from 'node:os';
+import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import Anthropic from '@anthropic-ai/sdk';
 import { createBrain, normalizeDecision, renderView, sanitizeView } from './brain.js';
@@ -103,12 +106,18 @@ function fakeApi(handler) {
       res.end(JSON.stringify(payload));
     });
   });
-  return new Promise((resolve) => server.listen(0, '127.0.0.1', () => resolve({
-    seen,
-    client: new Anthropic({ apiKey: 'test-key', baseURL: `http://127.0.0.1:${server.address().port}`, maxRetries: 0 }),
-    close: () => server.close(),
-  })));
+  return new Promise((resolve) => server.listen(0, '127.0.0.1', () => {
+    const base = `http://127.0.0.1:${server.address().port}`;
+    resolve({
+      seen,
+      base,
+      client: new Anthropic({ apiKey: 'test-key', baseURL: base, maxRetries: 0 }),
+      close: () => server.close(),
+    });
+  }));
 }
+const authError = { type: 'error', error: { type: 'authentication_error', message: 'bad key' } };
+const modelInfo = { type: 'model', id: 'claude-opus-5', display_name: 'Claude Opus 5', created_at: '2026-01-01T00:00:00Z' };
 const message = (text, stop = 'end_turn') => ({
   id: 'msg_1', type: 'message', role: 'assistant', model: 'claude-opus-5', stop_reason: stop,
   content: text == null ? [] : [{ type: 'text', text }],
@@ -186,17 +195,40 @@ test('status：Key 无效时报不可用，模型存在时报可用', async () =
   } finally { api.close(); }
 });
 
-/* ---------- 真正起一个游戏服务（mock 大脑） ---------- */
-test('游戏服务：托管页面、只给游戏文件、API 只收同源 JSON', async (t) => {
+test('页面填 Key：坏 Key 不换上，好 Key 验证后换上并用它调用', async () => {
+  const GOOD = 'sk-ant-api03-good-key-0000';
+  const api = await fakeApi((req) => {
+    if (req.headers['x-api-key'] !== GOOD) return [401, authError];
+    if (req.url.startsWith('/v1/models/')) return [200, modelInfo];
+    return [200, message(JSON.stringify({ thought: 't', target: 0, notes: 'n' }))];
+  });
+  try {
+    const brain = createBrain({ clientOptions: { baseURL: api.base, apiKey: 'sk-ant-old-key-000000000' } });
+    assert.equal((await brain.status()).ready, false);
+    assert.equal((await brain.useKey('sk-ant-api03-bad-key-00000')).ready, false);
+    assert.equal((await brain.useKey(GOOD)).ready, true);
+    assert.equal((await brain.decide('vote', wolfView)).target, 0);
+    assert.equal(api.seen.at(-1).headers['x-api-key'], GOOD);
+    brain.resetKey();
+    assert.equal((await brain.status()).ready, false);
+  } finally { api.close(); }
+});
+
+/* ---------- 真正起一个游戏服务 ---------- */
+async function startGame(t, args, env) {
   const port = 20000 + Math.floor(Math.random() * 20000);
   const entry = fileURLToPath(new URL('./index.js', import.meta.url));
-  const child = spawn(process.execPath, [entry, '--mock'], { env: { ...process.env, PORT: String(port) }, stdio: 'pipe' });
+  const child = spawn(process.execPath, [entry, ...args], { env: { ...env, PORT: String(port) }, stdio: 'pipe' });
   t.after(() => child.kill());
   await new Promise((resolve, reject) => {
     child.stdout.on('data', (c) => { if (String(c).includes('打开')) resolve(); });
     child.on('exit', (code) => reject(new Error(`server exited ${code}`)));
   });
-  const base = `http://127.0.0.1:${port}`;
+  return { port, base: `http://127.0.0.1:${port}` };
+}
+
+test('游戏服务：托管页面、只给游戏文件、API 只收同源 JSON', async (t) => {
+  const { port, base } = await startGame(t, ['--mock'], process.env);
   const get = (p) => fetch(base + p);
 
   assert.equal((await get('/')).status, 200);
@@ -223,4 +255,54 @@ test('游戏服务：托管页面、只给游戏文件、API 只收同源 JSON',
   assert.equal((await post({ task: 'vote', view: wolfView }, { Origin: 'https://evil.example' })).status, 403);
   const plain = await fetch(base + '/api/ai/decide', { method: 'POST', headers: { 'Content-Type': 'text/plain' }, body: '{}' });
   assert.equal(plain.status, 415);
+  // 模拟大脑不收 Key
+  const mockKey = await fetch(base + '/api/ai/key', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{"apiKey":"sk-ant-xxxxxxxxxxxxxxxxxxxx"}' });
+  assert.equal(mockKey.status, 409);
+});
+
+test('游戏服务：页面填 Key → 验证、写进 .env、从不回显；移除 → 从 .env 删掉', async (t) => {
+  const GOOD = 'sk-ant-api03-page-key-000000001234';
+  const api = await fakeApi((req) => (req.headers['x-api-key'] === GOOD ? [200, modelInfo] : [401, authError]));
+  t.after(() => api.close());
+  const envFile = path.join(await mkdtemp(path.join(os.tmpdir(), 'midnight-')), '.env');
+  await writeFile(envFile, '# 我的配置\nAI_EFFORT=low\nANTHROPIC_API_KEY=\nPORT_NOTE=keep\n');
+  const env = { ...process.env, ANTHROPIC_BASE_URL: api.base, AI_ENV_FILE: envFile };
+  for (const k of ['ANTHROPIC_API_KEY', 'ANTHROPIC_AUTH_TOKEN', 'AI_MOCK']) delete env[k];
+  const { base } = await startGame(t, [], env);
+  const call = async (method, body) => {
+    const res = await fetch(base + '/api/ai/key', { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body || {}) });
+    const text = await res.text();
+    assert.ok(!text.includes(GOOD), '响应里绝不能出现完整的 Key');
+    return { status: res.status, json: JSON.parse(text) };
+  };
+
+  let st = await (await fetch(base + '/api/ai/status')).json();
+  assert.equal(st.ready, false);
+  assert.deepEqual(st.key, { source: null, hint: null, editable: true });
+
+  assert.equal((await call('POST', { apiKey: 'short' })).status, 400);
+  assert.equal((await call('POST', { apiKey: 'sk-ant-api03-xxxxxxxxxxxx\nAI_MOCK=1' })).status, 400);
+  const bad = await call('POST', { apiKey: 'sk-ant-api03-wrong-key-0000000', remember: true });
+  assert.equal(bad.status, 400);
+  assert.match(bad.json.error, /API Key/);
+  assert.doesNotMatch(await readFile(envFile, 'utf8'), /wrong-key/);
+
+  const good = await call('POST', { apiKey: GOOD, remember: true });
+  assert.equal(good.status, 200);
+  assert.equal(good.json.ready, true);
+  assert.deepEqual(good.json.key, { source: 'file', hint: 'sk-ant-…1234', editable: true });
+  assert.equal(await readFile(envFile, 'utf8'), `# 我的配置\nAI_EFFORT=low\nANTHROPIC_API_KEY=${GOOD}\nPORT_NOTE=keep\n`);
+  st = await (await fetch(base + '/api/ai/status')).text();
+  assert.ok(!st.includes(GOOD));
+  assert.equal(JSON.parse(st).ready, true);
+
+  const gone = await call('DELETE');
+  assert.equal(gone.status, 200);
+  assert.equal(gone.json.ready, false);
+  assert.equal(gone.json.key.source, null);
+  assert.equal(await readFile(envFile, 'utf8'), '# 我的配置\nAI_EFFORT=low\nPORT_NOTE=keep\n');
+
+  const session = await call('POST', { apiKey: GOOD, remember: false });
+  assert.equal(session.json.key.source, 'page');
+  assert.doesNotMatch(await readFile(envFile, 'utf8'), /ANTHROPIC_API_KEY/);
 });
