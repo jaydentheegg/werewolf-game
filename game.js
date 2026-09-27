@@ -7,6 +7,9 @@
  *  - 联机：房主页面 = 权威状态机（跑完整局），其他真人通过
  *    Trystero P2P（同一房间号）接入；身份/夜间行动/查验结果
  *    只定向发给本人；公开事件（发言/投票/死亡）广播给所有人。
+ *  - AI 座位：服务端可用（npm start）时接入 Claude，每个 AI 带着
+ *    性格、私人笔记和只属于它的信息自己推理；否则用经典规则 AI。
+ *    不管哪种，决定都在这里按规则再校验一遍——本文件仍是唯一的规则权威。
  * ============================================================ */
 
 'use strict';
@@ -56,6 +59,20 @@ function compFor(n) {
 function setCustomComposition(arr) { CUSTOM_COMP = (arr && arr.length) ? arr.slice() : null; }
 
 const BOT_NAMES = ['小明', '小红', '阿强', '小美', '大壮', '静香', '老王', '阿豪', '丽丽', '铁柱', '翠花', '二狗', '小芳', '老张', '毛毛', '丫丫'];
+/* 接入 AI 时每个 AI 座位抽一种性格，让十一个人说话不是一个腔调 */
+const BOT_PERSONAS = [
+  '冷静理性，喜欢摆逻辑、算票型',
+  '心直口快，怀疑谁就直说',
+  '谨慎低调，话不多但句句有分量',
+  '爱开玩笑，说话带点调侃',
+  '老实憨厚，容易相信别人',
+  '强势，喜欢带节奏、指挥大家投票',
+  '多疑敏感，谁都不太信',
+  '温和圆滑，喜欢打圆场',
+  '新手心态，常把心里话说出来',
+  '老练沉稳，擅长抓发言漏洞',
+  '情绪化，被怀疑时会激烈反驳',
+];
 
 /* ---------- 界面引用 ---------- */
 const elSetup = $('setup'), elLobby = $('lobby'), elGame = $('game');
@@ -473,48 +490,176 @@ function botVoteTarget(p) {
 }
 
 /* ============================================================
+ * AI 大脑（Claude，经 ai.js → 服务端）——只在房主 / 单机端运行
+ * 每个座位带着：persona 性格、notes 私人笔记（每次决策后由它自己改写）、
+ * secrets 只属于它的信息（查验结果、刀口、用药）、minds 心声记录（终局回放用）。
+ * 决策时只把「它能看到的」打包成 view：公开记录 G.events + 自己的 secrets + 笔记；
+ * 活人的身份一律不给。拿回来的决定在调用处按规则再校验，失败 / 超时就退回上面的经典规则。
+ * ============================================================ */
+const TASK_LABEL = { speak: '发言', vote: '投票', wolf_kill: '夜袭', seer_check: '查验', witch: '用药', hunter_shoot: '开枪' };
+
+function aiOn() { return MODE !== 'client' && !!(window.wwAI && window.wwAI.active); }
+
+/* 公开记录 / 私密记录（r = 第几夜 / 天） */
+function pubEvent(e) { G.events.push(Object.assign({ r: G.night }, e)); }
+function secretTo(p, e) { if (p) p.secrets.push(Object.assign({ r: G.night }, e)); }
+
+function botView(p, options) {
+  return {
+    me: { id: p.id, name: p.name, role: p.role, persona: p.persona },
+    mates: p.role === 'wolf' ? G.players.filter(o => o.role === 'wolf' && o.id !== p.id).map(o => o.id) : [],
+    round: G.night,
+    phase: G.phase,
+    // 死者身份是公开的（牌桌上也翻开了），活人的身份不给
+    players: G.players.map(o => ({ id: o.id, name: o.name, alive: o.alive, role: o.alive ? null : o.role })),
+    events: G.events,
+    secrets: p.secrets,
+    notes: p.notes,
+    options,
+  };
+}
+
+/* 让某个 AI 座位想一件事。返回校验前的决定，或 null（没接 AI / 失败） */
+async function botThink(p, task, options) {
+  if (!aiOn()) return null;
+  const d = await window.wwAI.decide(task, botView(p, options));
+  if (!G || G.over) return null;
+  if (!d) { aiLostNotice(); return null; }
+  if (G.aiLost) {
+    G.aiLost = false;
+    pubLog('🧠 AI 大脑重新连上了。', 'sys');
+  }
+  if (typeof d.notes === 'string' && d.notes) p.notes = d.notes;
+  if (typeof d.thought === 'string' && d.thought) {
+    p.minds.push({ r: G.night, phase: G.phase, task, thought: d.thought });
+    // 旁观心声：只在单机、玩家自己打开时写进纪事（会剧透）
+    if (MODE === 'solo' && window.wwAI.reveal) {
+      addLog(`<span class="who">💭 ${esc(p.name)} · ${TASK_LABEL[task]}</span>${esc(d.thought)}`, 'mind');
+    }
+  }
+  return d;
+}
+
+/* ai.js 判定掉线（连续失败）后会暂停一小段时间再重试；这期间 AI 座位用经典规则顶上 */
+function aiLostNotice() {
+  if (!G.aiStart || G.aiLost || aiOn()) return;
+  G.aiLost = true;
+  pubLog('⚠️ AI 大脑暂时失联，AI 玩家先用经典规则顶上，稍后会自动重连。', 'sys');
+}
+
+/* AI 正在想：牌桌上给它的卡加 thinking 标记（客户端也同步）。
+ * 只用在公开场合（白天发言）——夜里谁在想事情本身就是身份信息。 */
+function markThinking(id, on) {
+  const card = elTable.querySelector(`.card[data-id="${id}"]`);
+  if (card) card.classList.toggle('thinking', on);
+  if (mpHost()) broadcast({ kind: 'thinking', id, on });
+}
+/* 本页导演面板上的等待提示（无按钮，不会被当成可操作面板） */
+function aiWaitShow(html) {
+  if (elAction.querySelector('button, input')) return;
+  elAction.className = 'action ai-wait-action';
+  elAction.innerHTML = `<div class="ai-wait"><i aria-hidden="true"></i><span>${html}</span></div>`;
+}
+function aiWaitHide() {
+  if (!elAction.querySelector('.ai-wait')) return;
+  elAction.innerHTML = '';
+  elAction.className = 'action';
+}
+
+/* 终局回放：每个 AI 一路上的内心独白 + 最后的笔记（HTML 已转义，可直接发给客户端） */
+function buildMindsHtml() {
+  const bots = G.players.filter(p => p.isBot && p.minds.length);
+  if (!bots.length) return '';
+  return bots.map(p => {
+    const camp = p.role === 'wolf' ? 'wolf' : 'good';
+    const items = p.minds.map(m =>
+      `<li><em>第 ${m.r} ${m.phase === 'day' ? '天' : '夜'} · ${TASK_LABEL[m.task] || ''}</em>${esc(m.thought)}</li>`).join('');
+    const notes = p.notes ? `<p class="mind-notes">最后的笔记：${esc(p.notes)}</p>` : '';
+    return `<details class="mind-card" data-camp="${camp}"><summary><b>${esc(p.name)}</b>` +
+      `<span class="mind-role">${ROLES[p.role].icon} ${ROLES[p.role].name}</span>` +
+      `<span class="mind-count">${p.minds.length} 段心声</span></summary><ol>${items}</ol>${notes}</details>`;
+  }).join('');
+}
+
+/* ============================================================
  * 夜晚
  * ============================================================ */
 async function ambientVeil(text, cls, ms) {
   if (MODE === 'solo') { await veilSync(text, cls, ms); }
   else await sleep(Math.min(ms, 800));
 }
+/* 同上，但遮罩要撑到 AI 想完为止（至少 ms） */
+async function ambientVeilWhile(text, cls, ms, work) {
+  if (MODE === 'solo') {
+    veilShow(text, cls);
+    await Promise.all([sleep(ms), work]);
+    veilHide();
+  } else {
+    await Promise.all([sleep(Math.min(ms, 800)), work]);
+  }
+}
 
-/* 狼队选择击杀目标：真人各自投选 → 多数决（平票随机）；
- * 无真人狼时由 AI 随机。空选（跳过）→ AI 随机兜底。 */
+/* 狼队选择击杀目标：
+ *  - 接入 AI 时，AI 狼人先「商量」：按座位依次提议，后开口的能看到前面队友的提议和理由；
+ *  - 真人狼人随后各自投选（能看到 AI 队友的提议），真人的票说了算，多数决、平票随机；
+ *  - 没有真人狼：AI 提议多数决；都没有就随机。空选（跳过）→ 随机兜底。 */
 async function wolvesDecide() {
   const wolves = alivePs().filter(p => p.role === 'wolf');
   const goodOnes = alivePs().filter(p => p.role !== 'wolf');
   if (!wolves.length || !goodOnes.length) return null;
+  const targets = goodOnes.map(p => p.id);
 
   const humanWolves = wolves.filter(p => !p.isBot);
-  if (!humanWolves.length) {
-    await ambientVeil('🌑 狼人睁眼…', 'night', 1300);
+  const botWolves = wolves.filter(p => p.isBot);
+  const proposals = [];
+  let veiled = false;
+  if (botWolves.length && aiOn()) {
+    veiled = true;
+    await ambientVeilWhile('🌑 狼人睁眼…', 'night', 1300, (async () => {
+      for (const w of botWolves) {
+        const d = await botThink(w, 'wolf_kill', { targets, proposals: proposals.slice() });
+        if (d && targets.includes(d.target)) proposals.push({ id: w.id, target: d.target, reason: d.thought });
+      }
+    })());
+  }
+
+  if (!humanWolves.length && !proposals.length) {
+    if (!veiled) await ambientVeil('🌑 狼人睁眼…', 'night', 1300);
     await sleep(600);
     return pick(goodOnes).id;
   }
+  const advice = proposals.length
+    ? 'AI 队友的提议：' + proposals.map(pr => {
+        const why = pr.reason ? `（${esc(Array.from(pr.reason).slice(0, 40).join(''))}）` : '';
+        return `<b>${esc(byId(pr.id).name)}</b> 想刀 <b>${esc(byId(pr.target).name)}</b>${why}`;
+      }).join('；') + '。你的选择说了算（多名真人狼人时票多者胜）。'
+    : '狼队无法密聊：每名狼人悄悄投选一个目标，票多者成为今晚猎物（跳过则由 AI 兜底）。';
   const picks = [];
   for (const w of humanWolves) {
     const v = await askSeat('pick', w.id, {
       title: '🐺 你是狼人，今晚杀谁？',
-      hint: '狼队无法密聊：每名狼人悄悄投选一个目标，票多者成为今晚猎物（跳过则由 AI 兜底）。',
+      hint: advice,
       opts: goodOnes.map(p => ({ label: p.name, value: p.id, cls: 'danger' })),
     });
     if (typeof v === 'number') picks.push(v);
   }
-  if (!picks.length) return pick(goodOnes).id;
+  const pool = picks.length ? picks : proposals.map(pr => pr.target);
+  if (!pool.length) return pick(goodOnes).id;
   const tally = {};
-  picks.forEach(id => { tally[id] = (tally[id] || 0) + 1; });
+  pool.forEach(id => { tally[id] = (tally[id] || 0) + 1; });
   const maxV = Math.max(...Object.values(tally));
   const top = Object.keys(tally).filter(id => tally[id] === maxV);
   return +pick(top);
 }
 
 /* 猎人挑目标（开枪），返回玩家或 null */
-async function hunterAct(hunter) {
+async function hunterAct(hunter, cause) {
   const others = aliveOthers(hunter.id);
   if (!others.length) return null;
   if (hunter.isBot) {
+    const ids = others.map(o => o.id);
+    const d = await botThink(hunter, 'hunter_shoot', { cause, targets: ids });
+    if (d && ids.includes(d.target)) return byId(d.target);
     await sleep(700);
     let t = others.find(o => o.id === hunter.botAccuse);
     if (t && t.alive) return t;
@@ -536,8 +681,11 @@ async function publicDeathOf(p, cause) {
   await pubLogSlow(`☠️ <b>${esc(p.name)}</b>（${ROLES[p.role].icon} ${ROLES[p.role].name}）${how}！`, 'dead', 500);
   if (p.role === 'hunter' && cause === 'vote') {
     await pubLogSlow(`🏹 <b>${esc(p.name)}</b> 是猎人，临死前开枪！`, 'day', 600);
-    const target = await hunterAct(p);
-    if (target) await publicDeathOf(target, 'gun');
+    const target = await hunterAct(p, 'vote');
+    if (target && target.alive) {
+      pubEvent({ k: 'shot', by: p.id, id: target.id });
+      await publicDeathOf(target, 'gun');
+    }
   }
   syncViews();
 }
@@ -549,10 +697,11 @@ async function nightDeathOf(p, cause) {
   G.nightDead.push(p);
   if (p.role === 'hunter' && cause !== 'poison') {
     await pubLogSlow(`🏹 黑夜中传来一声枪响！<b>${esc(p.name)}</b> 临死前开枪……`, 'day', 700);
-    const target = await hunterAct(p);
+    const target = await hunterAct(p, cause);
     if (target && target.alive) {
       target.alive = false;
       G.nightDead.push(target);
+      pubEvent({ k: 'shot', by: p.id, id: target.id, night: true });
     }
   }
 }
@@ -564,18 +713,33 @@ async function nightPhase() {
   G.nightDead = [];
   syncViews();   // 与 dayPhase 对称：入夜后立刻重绘，否则状态条会一直停在「白天」
 
+  // AI 预言家和狼人各想各的：先把它的查验思考发出去，轮到它时再取结果，省掉一轮等待
+  const seer = alivePs().find(p => p.role === 'seer');
+  const seerTargetIds = seer ? aliveOthers(seer.id).map(p => p.id) : [];
+  const seerThinking = seer && seer.isBot && seerTargetIds.length && aiOn()
+    ? botThink(seer, 'seer_check', { targets: seerTargetIds })
+    : null;
+
   // ---- 狼人行动 ----
   const victim = byId(await wolvesDecide());
+  if (victim) alivePs().filter(p => p.role === 'wolf').forEach(w => secretTo(w, { k: 'kill', id: victim.id }));
 
   // ---- 预言家行动 ----
-  const seer = alivePs().find(p => p.role === 'seer');
   if (seer) {
     const targets = aliveOthers(seer.id);
     if (targets.length) {
       if (seer.isBot) {
-        await ambientVeil('🔮 预言家睁眼…', 'night', 1100);
-        const t = pick(targets);
+        let t = null;
+        if (seerThinking) {
+          await ambientVeilWhile('🔮 预言家睁眼…', 'night', 1100, seerThinking);
+          const d = await seerThinking;
+          if (d && seerTargetIds.includes(d.target)) t = byId(d.target);
+        } else {
+          await ambientVeil('🔮 预言家睁眼…', 'night', 1100);
+        }
+        if (!t) t = pick(targets);
         seer.botSeerSuspect = t.role === 'wolf' ? t.id : null;
+        secretTo(seer, { k: 'check', id: t.id, wolf: t.role === 'wolf' });
         await sleep(500);
       } else {
         const tId = await askSeat('pick', seer.id, {
@@ -587,6 +751,7 @@ async function nightPhase() {
         if (t && t.alive && t.id !== seer.id) {
           const isWolf = t.role === 'wolf';
           t.seerMark = isWolf ? 'wolf' : 'good';
+          secretTo(seer, { k: 'check', id: t.id, wolf: isWolf });
           await privTo(seer.id,
             `<span class="who">🔮 你</span> 查验了 ${esc(t.name)}：<b>${isWolf ? '🐺 狼人' : '✅ 好人'}</b>`,
             'night',
@@ -601,10 +766,27 @@ async function nightPhase() {
   const witch = alivePs().find(p => p.role === 'witch');
   let saved = false, poisoned = null;
   if (witch && victim) {
+    secretTo(witch, { k: 'attacked', id: victim.id });
     if (witch.isBot) {
-      await ambientVeil('🧪 女巫睁眼…', 'night', 1100);
       const canHeal = witch.witch.heal && (victim.id !== witch.id || G.night === 1);
-      if (canHeal && Math.random() < 0.55) { witch.witch.heal = false; saved = true; }
+      const poisonIds = aliveOthers(witch.id).filter(p => p.id !== victim.id).map(p => p.id);
+      const canPoison = witch.witch.poison && poisonIds.length > 0;
+      const thinking = aiOn()
+        ? botThink(witch, 'witch', {
+            victim: victim.id, canHeal, healUsed: !witch.witch.heal, canPoison, poisonTargets: poisonIds,
+          })
+        : null;
+      if (thinking) await ambientVeilWhile('🧪 女巫睁眼…', 'night', 1100, thinking);
+      else await ambientVeil('🧪 女巫睁眼…', 'night', 1100);
+      const d = thinking ? await thinking : null;
+      if (d) {
+        if (d.heal === true && canHeal) { witch.witch.heal = false; saved = true; }
+        if (canPoison && poisonIds.includes(d.poison)) { witch.witch.poison = false; poisoned = byId(d.poison); }
+      } else if (canHeal && Math.random() < 0.55) {
+        witch.witch.heal = false; saved = true;
+      }
+      if (saved) secretTo(witch, { k: 'heal', id: victim.id });
+      if (poisoned) secretTo(witch, { k: 'poison', id: poisoned.id });
       await sleep(500);
     } else {
       // --- 解药 ---
@@ -627,6 +809,7 @@ async function nightPhase() {
       }
       if (healChoice === true) {
         witch.witch.heal = false; saved = true;
+        secretTo(witch, { k: 'heal', id: victim.id });
         privTo(witch.id, '🧪 你使用了解药，救下了他。', 'night');
       }
       // --- 毒药 ---
@@ -642,6 +825,7 @@ async function nightPhase() {
         if (typeof pv === 'number') {
           witch.witch.poison = false;
           poisoned = byId(pv);
+          secretTo(witch, { k: 'poison', id: poisoned.id });
           privTo(witch.id, `🧪 你对 ${esc(poisoned.name)} 下了毒。`, 'night');
         }
       }
@@ -662,6 +846,7 @@ async function nightPhase() {
 async function dayPhase() {
   await pubVeil('☀️ 天亮了…', 'day', 1400);
 
+  pubEvent({ k: 'dawn', dead: G.nightDead.map(p => p.id) });
   if (G.nightDead.length === 0) {
     await pubLogSlow('🌅 昨夜是平安夜，没有人死去。', 'day', 700);
   } else {
@@ -676,14 +861,32 @@ async function dayPhase() {
 
   // ---- 轮流发言 ----
   await pubLogSlow('🗣️ 存活玩家开始轮流发言……', 'day', 400);
-  for (const p of alivePs()) {
+  const speakers = alivePs();
+  for (const [i, p] of speakers.entries()) {
     if (G.over) break;
     paintHost(p.id);
     if (mpHost()) broadcast({ kind: 'speaker', id: p.id });
     let text = null;
     if (p.isBot) {
-      text = botSpeechLine(p);
-      await pubLogSlow(`<span class="who">${esc(p.name)}</span>：${esc(text)}`, 'day', 380);
+      let d = null;
+      if (aiOn()) {
+        // 发言者本来就是公开的，这里可以大方地亮出「正在思考」
+        markThinking(p.id, true);
+        aiWaitShow(`<b>${esc(p.name)}</b> 正在思考要说什么…`);
+        d = await botThink(p, 'speak', {
+          order: i + 1, total: speakers.length, targets: aliveOthers(p.id).map(o => o.id),
+        });
+        aiWaitHide();
+        markThinking(p.id, false);
+      }
+      if (d && d.speech) {
+        text = d.speech;
+        if (aliveOthers(p.id).some(o => o.id === d.suspect)) p.botAccuse = d.suspect;
+      } else {
+        text = botSpeechLine(p);
+      }
+      pubEvent({ k: 'speech', id: p.id, text });
+      await pubLogSlow(`<span class="who">${esc(p.name)}</span>：${esc(text)}`, 'day', d ? 900 : 380);
     } else {
       const v = await askSeat('text', p.id, {
         title: '🗣️ 轮到你发言',
@@ -691,6 +894,7 @@ async function dayPhase() {
         placeholder: '例：我是预言家，昨晚查了小明确实是狼…',
       });
       text = v;
+      pubEvent({ k: 'speech', id: p.id, text: text || '' });
       if (text) {
         pubLog(`<span class="who">👑 ${esc(p.name)}</span>：${esc(text)}`, 'day');
         const hit = aliveOthers(p.id).find(o => text.includes(o.name));
@@ -708,12 +912,33 @@ async function dayPhase() {
   elGame.dataset.stage = 'vote';
   if (mpHost()) broadcast({ kind: 'stage', stage: 'vote' });
 
+  // AI 的票是同时想的：先把所有 AI 的投票思考一起发出去，真人投票时它们也在权衡
+  const voters = alivePs();
+  const botBallots = new Map();
+  if (aiOn()) {
+    for (const p of voters) {
+      if (p.isBot) botBallots.set(p.id, botThink(p, 'vote', { targets: aliveOthers(p.id).map(o => o.id) }));
+    }
+  }
+  const pending = new Set(botBallots.keys());
+  botBallots.forEach((pr, id) => pr.then(() => pending.delete(id)));
+
   const tally = {};
-  for (const p of alivePs()) {
+  const ballots = [];
+  for (const p of voters) {
     let toId = null;
     if (p.isBot) {
-      const t = botVoteTarget(p);
-      toId = t ? t.id : null;
+      let d = null;
+      if (botBallots.has(p.id)) {
+        if (pending.size) aiWaitShow('AI 玩家还在权衡手里的这一票…');
+        d = await botBallots.get(p.id);
+      }
+      if (d && aliveOthers(p.id).some(o => o.id === d.target)) {
+        toId = d.target;
+      } else {
+        const t = botVoteTarget(p);
+        toId = t ? t.id : null;
+      }
     } else {
       const targets = aliveOthers(p.id);
       const v = await askSeat('pick', p.id, {
@@ -724,25 +949,35 @@ async function dayPhase() {
       if (typeof v === 'number') toId = v;
     }
     if (toId != null) tally[toId] = (tally[toId] || 0) + 1;
+    ballots.push([p.id, toId == null ? -1 : toId]);
   }
+  aiWaitHide();
+  if (G.over) return;
 
   await sleep(400);
   const entries = Object.entries(tally).sort((a, b) => b[1] - a[1]);
   if (entries.length) {
     const summary = entries.map(([id, c]) => `${esc(G.players.find(p => p.id === +id).name)} ${c}票`).join('，');
     pubLog(`<span class="who">📊 计票结果</span>：${summary}`, 'day');
+    // 票型公开：谁投了谁，AI 和真人都靠它盘逻辑
+    const detail = ballots.map(([a, b]) => `${esc(byId(a).name)}→${b >= 0 ? esc(byId(b).name) : '弃票'}`).join('，');
+    pubLog(`<span class="who">🗳️ 票型</span>：${detail}`, 'sys');
   }
+  pubEvent({ k: 'votes', votes: ballots });
 
   let exiled = null;
   if (!entries.length || entries[0][1] === 0) {
+    pubEvent({ k: 'novote' });
     await pubLogSlow('⚖️ 无人投票，今天无人被放逐。', 'day', 900);
   } else {
     const maxV = entries[0][1];
     const leaders = entries.filter(e => e[1] === maxV).map(e => G.players.find(p => p.id === +e[0]));
     if (leaders.length > 1) {
+      pubEvent({ k: 'tie' });
       await pubLogSlow('⚖️ 平票，今天无人被放逐。', 'day', 900);
     } else {
       exiled = leaders[0];
+      pubEvent({ k: 'exile', id: exiled.id });
       await pubLogSlow(`⚖️ ${esc(exiled.name)} 得票最高，被放逐！`, 'day', 500);
       await publicDeathOf(exiled, 'vote');
       if (checkWin()) { G.over = true; return; }
@@ -769,10 +1004,13 @@ function dealGame(n, humans) {
   const roles = shuffle(compFor(n));
   const takenNames = humans.map(h => h.name);
   const pool = shuffle(BOT_NAMES.filter(x => !takenNames.includes(x)));
+  const personas = shuffle(BOT_PERSONAS);
   G = {
     n, mode: MODE,
     players: [], phase: 'night', night: 1, over: false, nightDead: [],
     mpHumanCount: humans.length,
+    events: [],          // 公开记录（AI 推理用）
+    aiStart: false, aiLost: false,
   };
   for (let i = 0; i < n; i++) {
     const isHuman = i < humans.length;
@@ -787,6 +1025,10 @@ function dealGame(n, humans) {
       witch: { heal: true, poison: true },
       botSeerSuspect: null,
       botAccuse: null,
+      persona: isHuman ? '' : (personas[i % personas.length] || ''),
+      notes: '',
+      secrets: [],
+      minds: [],
     });
   }
 }
@@ -840,6 +1082,13 @@ async function beginPlay(n) {
   paintHost();
 
   pubLog(`<span class="who">系统</span>：${n} 人局开始。`, 'sys');
+  // 首页刚打开就开局时，AI 服务的探测可能还没回来——等它一下（最多几秒）
+  if (window.wwAI) await window.wwAI.whenReady();
+  G.aiStart = aiOn();
+  if (G.aiStart) {
+    const brain = window.wwAI.mock ? '离线模拟大脑' : esc(window.wwAI.model);
+    pubLog(`<span class="who">系统</span>：🧠 本局 AI 玩家接入了 ${brain}——它们会自己记笔记、推理、发言和投票。`, 'sys');
+  }
   for (let i = 0; i < G.mpHumanCount; i++) introSeat(i);
   await sleep(800);
   if (!G.over) await mainLoop();
@@ -881,13 +1130,22 @@ async function endGame(winnerCamp) {
     return `<span class="${c}">${esc(p.name)} · ${ROLES[p.role].icon} ${ROLES[p.role].name}${dead}</span>`;
   }).join('');
 
+  const mindsHtml = buildMindsHtml();
   // 本地（房主）结算弹窗
-  showOverlayLocal(winnerCamp, rolesHtml);
-  // 通知客户端结算
-  if (mpHost()) broadcast({ kind: 'over', winnerCamp, rolesHtml });
+  showOverlayLocal(winnerCamp, rolesHtml, mindsHtml);
+  // 通知客户端结算（终局了，AI 的心声可以公开）
+  if (mpHost()) broadcast({ kind: 'over', winnerCamp, rolesHtml, mindsHtml });
 }
 
-function showOverlayLocal(winnerCamp, rolesHtml) {
+/* 结算页的「AI 心声回放」：没有接入 AI 的对局不显示 */
+function showMinds(html) {
+  const box = $('aiMinds');
+  if (!box) return;
+  $('aiMindsList').innerHTML = html || '';
+  box.classList.toggle('hidden', !html);
+}
+
+function showOverlayLocal(winnerCamp, rolesHtml, mindsHtml) {
   const human = G.players[HOST_SEAT];
   const myRole = ROLES[human.role];
   const winColor = winnerCamp === 'good' ? 'var(--good)' : (winnerCamp === 'wolf' ? 'var(--wolf)' : 'var(--text)');
@@ -896,6 +1154,7 @@ function showOverlayLocal(winnerCamp, rolesHtml) {
   $('ovTitle').style.color = winColor;
   $('ovText').innerHTML = '';
   $('ovRoles').innerHTML = rolesHtml;
+  showMinds(mindsHtml);
   $('stRole').textContent = '本局你为 ' + myRole.icon + ' ' + myRole.name;
   elOverlay.classList.remove('hidden');
 }
@@ -910,6 +1169,12 @@ function clientPaint(v) {
   elBadge.textContent = v.dayTxt;
   elTable.innerHTML = v.players.map(x => x.html).join('');
   if (v.phase === 'night') elGame.dataset.stage = 'night';
+}
+
+function clientThinking(id, on) {
+  if (typeof id !== 'number') return;
+  const card = elTable.querySelector(`.card[data-id="${id}"]`);
+  if (card) card.classList.toggle('thinking', !!on);
 }
 
 function clientSpeaker(id) {
@@ -1030,6 +1295,7 @@ async function enterLobby() {
   $('clientWait').classList.toggle('hidden', isHost);
   $('hostCntWrap').classList.toggle('hidden', !isHost);
   $('mpRolesRow').classList.toggle('hidden', !isHost);
+  $('mpBrainRow').classList.toggle('hidden', !isHost);   // AI 座位只在房主页面上思考
   $('mpStartBtn').classList.toggle('hidden', !isHost);
   $('mpReadyBtn').classList.toggle('hidden', isHost);
   $('mpStatus').textContent = isHost ? '等待玩家加入…' : '连接中…';
@@ -1214,6 +1480,7 @@ async function joinRoom(code) {
       else if (m.kind === 'veil') veilFlash(m.text, m.cls);
       else if (m.kind === 'view') { if (MY) clientPaint(m.v); }
       else if (m.kind === 'speaker') clientSpeaker(m.id);
+      else if (m.kind === 'thinking') clientThinking(m.id, m.on);
       else if (m.kind === 'stage') elGame.dataset.stage = m.stage || 'table';
       else if (m.kind === 'start') clientStart(m);
       else if (m.kind === 'ask') clientAsk(m);
@@ -1237,6 +1504,7 @@ async function joinRoom(code) {
   $('clientWait').classList.remove('hidden');
   $('hostCntWrap').classList.add('hidden');
   $('mpRolesRow').classList.add('hidden');
+  $('mpBrainRow').classList.add('hidden');
   $('mpStartBtn').classList.add('hidden');
   $('mpReadyBtn').classList.remove('hidden');
   $('mpStatus').textContent = '正在寻找房主…';
@@ -1255,6 +1523,7 @@ function showOverlayClient(m) {
   if (!MY) return;
   const myRole = ROLES[MY.roleId];
   $('ovRoles').innerHTML = m.rolesHtml;
+  showMinds(typeof m.mindsHtml === 'string' ? m.mindsHtml : '');
   $('stRole').textContent = '本局你为 ' + myRole.icon + ' ' + myRole.name;
   elOverlay.classList.remove('hidden');
 }
@@ -1263,6 +1532,7 @@ function peerLeaveInGame(peerId) {
   const p = G.players.find(x => x.peerId === peerId);
   if (!p) return;
   p.gone = true;   // 之后轮到他时 askSeat 直接跳过
+  pubEvent({ k: 'gone', id: p.id });
   flushSeatAsks(p.id);
   pubLog(`📴 <b>${esc(p.name)}</b> 掉线了（本局将自动跳过其所有操作）。`, 'sys');
   syncViews();
