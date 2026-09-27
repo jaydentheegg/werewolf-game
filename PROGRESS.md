@@ -2,33 +2,29 @@
 
 > 永久规则与项目地图看 CLAUDE.md。这里只写"现在改到哪、下一步做啥"。
 
-## 当前功能：人物卡去掉画框（已实现 ✅）
+## 当前功能：对局观感打磨（已实现 ✅，PR jaydentheegg/werewolf-game#5）
 
-**git 状态（2026-09-27）：** 分支 claude/practical-cray-nxte8b，已 commit + push。版本号全量 bump 到 ?v=47。
+**git 状态（2026-09-27）：** 分支 claude/practical-cray-nxte8b，已 commit + push。版本号全量 bump 到 ?v=48。
+按用户从 8 条建议里挑的顺序做了四轮：
 
-第三轮（建议 2）：界面文字里的 emoji → 原创符号（fx.js「九·二」）
-- game.js 的字符串一个没改（它们也进 G.events 给 AI 看、也广播给客人）；fx.js 在 body 上挂 MutationObserver，
-  把文本节点里的 emoji 换成 <ww-glyph>：角色 → 原有 sig-*；🌙🌑 → sig-moon，☀️🌅 → sig-sun，☠️ → sig-death（index.html 新增三枚）；
-  其余装饰 emoji（👑🗣️🗳️⚖️🧠…）连同后面的空格藏掉。过场大字（#veil）里一律藏掉，圣像徽章已经表达了角色。
-- 原 emoji 留在视觉隐藏的 <ww-glyph-src> 里 → textContent 不变：身份卡识别、结算 fx-win-*、保存故事、读屏都照旧。
-- 必须用自定义标签：`.ovroles span`、`.comic-panel span` 这类泛 span 选择器会给 span 套边框 / 大字号。
-- 跳过 .avatar、#rolePreview（各有自己的替换）、option/select/textarea、svg。镂空色走 --glyph-cut（!important，
-  防 day 相位的 `.card .sigil` 浅色镂空）；狼 / 骷髅固定砖红 #d95b45。
-- 验证：mock 整局跑到结算，全程扫描可见文本无 emoji 泄漏；file:// 正常；2x 屏下符号清晰。1x 下村民符号略像「0」（原有 sigil，旁边总跟着「村民」二字）。
-
-第二轮（用户从建议里挑了 1 / 4 / 7）：
-- 发言钟面整体下移 84px（.tablewrap 470→554、.table inset-top 84px、表盘弧线 72→156px）：放大的发言人卡顶
-  原来被裁掉 54px，XII 压在脸上；现在卡完整，XII 在它头顶（top 8px）。GSAP / --clock-x/y 都相对 .table，不受影响。
-- 身份卡遮罩背景 #11191b → #030304，与对局纯黑一致。
-- 发言输入框提示改短为「例：我是预言家，小明是狼」，1050px 宽（最窄桌面侧栏）也放得下。
-- 顺手修：白天旧规则 `html[data-phase="day"] #game .card` 的内描边优先级高过无框规则，
-  在半透明的出局卡上透出一圈框——已删。
-- 封面角色画廊：去掉 gilded-frame 细金框和卡片顶部分隔线；罗马数字加阴影直接压在插画上。
-- 身份卡：去掉 reliquary 金红画框、叶饰 .card-ornament、1px 描边和硬投影，改成柔和大阴影；
-  文字不用再躲画框，内边距收小（桌面 40/32/30，手机 34/24/26）。.idcard-sigil 原本被画框盖住，一并隐藏。
-- 圆桌卡牌 v36 起就已无框，这次只删掉了已被覆盖掉的画框背景声明。
-- index.html 去掉 reliquary-frame.webp 的 preload（没人用了，省约 340KB）。素材文件保留未删。
-- 验证：Playwright 截图 1440 / 390 宽的画廊、身份卡、白天圆桌；无 pageerror；画框素材不再被请求。
+1. 人物卡去画框：封面画廊去 gilded-frame；身份卡去 reliquary 画框 / 叶饰 / 描边 / 硬投影（.idcard-sigil 原被画框盖住，一并隐藏）；
+   去掉 reliquary-frame.webp 的 preload（省约 340KB，素材文件保留）。
+2. 建议 1/4/7：发言钟面整体下移 84px（发言人卡顶原被裁 54px、XII 压脸）；身份卡遮罩改纯黑；发言提示缩短。
+   顺手删掉白天旧的 `.card` 内描边（优先级高过无框规则，在半透明出局卡上透出一圈框）。
+3. 建议 2：界面文字 emoji → 原创符号（fx.js「九·二」）。game.js 字符串不动（进 G.events 给 AI、也广播给客人）；
+   换成 <ww-glyph>，原 emoji 留在视觉隐藏的 <ww-glyph-src> → textContent 不变。必须用自定义标签（泛 `span` 选择器会套样式）。
+   新增 sig-moon / sig-sun / sig-death。1x 屏下村民符号略像「0」（原有 sigil）。
+4. 建议 5/6（midnight.css 末尾两段 v48）：
+   - 昼夜光：对局里收掉 #fxCanvas（本来就被 #game 黑底挡住，只在 1420px 外露成两条灰带），#game 改透明；
+     #game::before 冷月光 / ::after 圆桌暖光，position:fixed + z-index:-1（#game 是 .screen 自成层叠上下文），
+     相位切换交叉淡入；卡面色调走 --card-tone（夜暗冷、昼回暖）。
+   - 出局烧焦：灰烬色插画 + SVG 噪声位移做的焦黑毛边遮罩 + 焦痕 + 左上砖红蜡封（骷髅）替代「已离席」。
+     .fx-die 动画：余烬橙光 → 毛边从卡外烧进（mask-size 136%→100%）→ 蜡封盖下；不碰 transform（圆桌 / 时钟靠它定位，
+     旧 cardDie 会让卡跳位）。fx.js：夜里的死亡先挂起，等「天亮了」遮罩收起再播（原来总在遮罩下播完）；
+     重绘换元素时用负 --die-at 接着播。手机上出局卡的标签收进卡内（否则被毛边遮罩切掉）。
+- 验证：mock 整局到结算、可见文本无 emoji 泄漏、无 pageerror；file:// 正常；1920 / 1440 / 390 截图；
+  出局动画逐帧截图，确认夜里死亡在天亮遮罩收起后才播；reduced-motion 下直接落到静态终态。
+- 测试脚本注意：点 #action 按钮要给 ≥1.5s 超时（狼人选项有入场动画，300ms 会一直点不中、看起来像卡死）。
 
 ## 上一个功能：AI 玩家接入 Claude、自己思考（已实现 ✅）
 
@@ -70,5 +66,5 @@
 - 开局清单改版。
 - 全量 bug 排查修复 13 项。
 - AI 玩家接入 Claude。
-- 人物卡去掉画框（本次）。
+- 对局观感打磨：去画框 / 钟面 / emoji 符号化 / 昼夜光 / 出局烧焦（本次）。
 - 更多历史见 git log。

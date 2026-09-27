@@ -530,6 +530,19 @@
     let knownDead = null;
     const seen = new Set();
     const dying = new Map();
+    /* 出局动画（ember → 焦边 → 蜡封）约 1.3s。夜里的死亡在两张遮罩的空隙里
+     * 落到牌桌上，紧接着就被「天亮了」盖住——当场播谁也看不见。
+     * 所以：夜里死的（刀 / 毒 / 夜里的猎枪）先记下，等天亮那张遮罩收起再播；
+     * 白天死的（放逐 / 白天的猎枪）没有遮罩，当场播。 */
+    const DIE_MS = 1400;
+    const pendingDeaths = new Set();
+    const veilUp = () => !!veil && !veil.classList.contains('hidden');
+    const holdDeath = () => veilUp() || veilPhase === 'night';
+    const startDying = (card, id, t) => {
+      setVar(card, '--die-at', '0ms');
+      setCls(card, 'fx-die', true);
+      dying.set(id, t);
+    };
     let animatedSpeaker = null;
     let applying = false;          // 防止自身写入触发的递归观察
 
@@ -573,8 +586,13 @@
           if (seen.has(id)) setCls(c, 'fx-seen', true); else seen.add(id);
           const t0 = dying.get(id);
           if (t0 != null) {
-            if (now - t0 < 640) setCls(c, 'fx-die', true);
-            else dying.delete(id);
+            /* game.js 整体重绘会换掉卡片元素：新元素用负延迟接着播，不从头再来 */
+            if (now - t0 < DIE_MS) {
+              if (!c.classList.contains('fx-die')) {
+                setVar(c, '--die-at', `${-Math.round(now - t0)}ms`);
+                setCls(c, 'fx-die', true);
+              }
+            } else dying.delete(id);
           }
         });
         swapAvatars(table);
@@ -594,12 +612,8 @@
           if (knownDead.has(id)) continue;
           const card = table.querySelector(`.card[data-id="${id}"]`);
           if (!card) continue;
-          const { x, y } = FX.centerOf(card);
-          FX.burst(x, y, { color: [142, 20, 32], n: 26, spread: 3.4 });
-          FX.burst(x, y, { color: [120, 118, 112], n: 14, spread: 2, gravity: 0.028 });
-          FX.shake(0.6);
-          setCls(card, 'fx-die', true);
-          dying.set(id, now);
+          if (holdDeath()) pendingDeaths.add(id);
+          else startDying(card, id, now);
         }
         knownDead = dead;
       } finally { applying = false; }
@@ -609,6 +623,15 @@
       childList: true, subtree: true, attributes: true, attributeFilter: ['class'],
     });
     onTable();
+    if (veil) new MutationObserver(() => {
+      if (holdDeath() || !pendingDeaths.size) return;
+      const now = performance.now();
+      for (const id of pendingDeaths) {
+        const card = table.querySelector(`.card.dead[data-id="${id}"]`);
+        if (card) startDying(card, id, now);
+      }
+      pendingDeaths.clear();
+    }).observe(veil, { attributes: true, attributeFilter: ['class'] });
 
     /* 可选目标：把 #action 里按钮提到的名字标到卡上 */
     const action = $('action');

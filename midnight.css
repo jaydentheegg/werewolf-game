@@ -829,3 +829,105 @@ html:not(.gsap-ready) .cast-card:hover, html:not(.gsap-ready) .cast-card:focus {
   .entry-item .entry-brush { transition: none !important; }
   .entry-screen .entry-row, .entry-drawer { animation: none !important; }
 }
+
+/* ============================================================
+   DAY / NIGHT LIGHT — v48
+   对局仍是黑底，昼夜只换一层光：夜里一缕冷月光、卡面暗而冷；
+   白天圆桌下亮起一团暖光、卡面回暖。两层交叉淡入淡出。
+   氛围画布在对局里本来就被 #game 的黑底挡住，只在 1420px 以外的
+   两侧露出来（白天是两条灰带），这里直接收掉，光改由 #game 自己铺满视口。
+   ============================================================ */
+body[data-screen="game"] #fxCanvas { visibility: hidden; }
+#game { background: transparent; }
+/* #game 是 .screen（relative + z-index:2）自成层叠上下文：-1 落在内容之下 */
+#game::before, #game::after {
+  content: ''; position: fixed; inset: 0; z-index: -1; pointer-events: none;
+  transition: opacity 1.6s ease;
+}
+#game::before {   /* 夜：冷月光自右上斜落 */
+  background:
+    radial-gradient(58% 52% at 80% -10%, rgba(132, 152, 190, .12), transparent 70%),
+    radial-gradient(44% 40% at 40% 54%, rgba(92, 108, 138, .05), transparent 75%);
+}
+#game::after {    /* 昼：圆桌下的暖光 + 顶上一线晨光 */
+  opacity: 0;
+  background:
+    radial-gradient(46% 44% at 40% 54%, rgba(214, 146, 74, .17), transparent 72%),
+    radial-gradient(80% 40% at 50% -8%, rgba(223, 177, 138, .10), transparent 70%);
+}
+html[data-phase="day"] #game::before { opacity: 0; }
+html[data-phase="day"] #game::after { opacity: 1; }
+#game .table .card .avatar { filter: var(--card-tone, saturate(.82)); transition: filter 1.2s ease; }
+html[data-phase="night"] #game .table { --card-tone: saturate(.6) brightness(.78); }
+html[data-phase="day"] #game .table { --card-tone: saturate(.95) sepia(.1) brightness(1.04); }
+
+/* ============================================================
+   BURNT EXIT — v48  出局：卡面被火燎过
+   静态：插画成灰烬色，焦黑毛边（SVG 噪声位移做遮罩），四周焦痕，
+   左上角一枚砖红蜡封（骷髅，与日志里的出局符号同形）。
+   动效 .fx-die（时机由 fx.js 决定：等过场遮罩收起才播）：
+   先窜起一圈余烬橙光 → 毛边从卡外烧进来 → 蜡封盖下。
+   不碰卡片的 transform——圆桌 / 时钟布局靠它定位。
+   ============================================================ */
+#game .table .card.dead {
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 145' preserveAspectRatio='none'%3E%3Cfilter id='b' x='-6%25' y='-6%25' width='112%25' height='112%25'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.075' numOctaves='3' seed='11'/%3E%3CfeDisplacementMap in='SourceGraphic' scale='9' xChannelSelector='R' yChannelSelector='G'/%3E%3C/filter%3E%3Crect x='4.5' y='3.5' width='91' height='138' filter='url(%23b)'/%3E%3C/svg%3E") center / 100% 100% no-repeat;
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 145' preserveAspectRatio='none'%3E%3Cfilter id='b' x='-6%25' y='-6%25' width='112%25' height='112%25'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.075' numOctaves='3' seed='11'/%3E%3CfeDisplacementMap in='SourceGraphic' scale='9' xChannelSelector='R' yChannelSelector='G'/%3E%3C/filter%3E%3Crect x='4.5' y='3.5' width='91' height='138' filter='url(%23b)'/%3E%3C/svg%3E") center / 100% 100% no-repeat;
+  box-shadow: none;
+}
+#game .table .card.dead .avatar {
+  opacity: 1; filter: grayscale(1) sepia(.2) saturate(1) brightness(.5) contrast(1.08) hue-rotate(0deg);
+}
+#game .table .card.dead .avatar::before {
+  content: ''; position: absolute; inset: 0; z-index: 1; pointer-events: none;
+  background:
+    radial-gradient(ellipse 74% 66% at 50% 46%, transparent 50%, rgba(96, 38, 16, .42) 74%, rgba(18, 7, 3, .94) 97%),
+    radial-gradient(30% 22% at 10% 92%, rgba(10, 4, 2, .8), transparent 70%),
+    radial-gradient(26% 20% at 94% 8%, rgba(10, 4, 2, .7), transparent 70%);
+}
+#game .table .card.dead::after {
+  content: ''; display: block; position: absolute; z-index: 4;
+  inset: 9px auto auto 9px; width: 34px; height: 34px; padding: 0;
+  font-size: 0; color: transparent; opacity: 1;
+  border-radius: 47% 53% 51% 49% / 53% 47% 53% 47%;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cpath fill='%233c0a04' fill-opacity='.62' fill-rule='evenodd' d='M16 4Q25.6 4 25.6 13.4Q25.6 18.6 22 20.8V24.6Q22 27 19.6 27H12.4Q10 27 10 24.6V20.8Q6.4 18.6 6.4 13.4Q6.4 4 16 4ZM9.4 14a2.7 2.7 0 1 0 5.4 0a2.7 2.7 0 1 0-5.4 0ZM17.2 14a2.7 2.7 0 1 0 5.4 0a2.7 2.7 0 1 0-5.4 0ZM16 17.4l1.6 2.7h-3.2ZM13.3 22.8h1.3v4.2h-1.3Z M15.35 22.8h1.3v4.2h-1.3Z M17.4 22.8h1.3v4.2h-1.3Z'/%3E%3C/svg%3E") center / 60% no-repeat,
+              radial-gradient(circle at 34% 30%, #d0705a, #a63a2b 48%, #6a1f15 100%);
+  box-shadow: inset 0 0 0 3px rgba(122, 36, 23, .55), inset 0 0 0 4px rgba(255, 196, 172, .16),
+              0 2px 5px rgba(0, 0, 0, .65);
+  transform: rotate(-12deg);
+}
+#game .table .card.fx-die { animation: dieBurn 1300ms cubic-bezier(.3,.6,.3,1) var(--die-at, 0ms) both; }
+#game .table .card.fx-die .avatar { animation: dieAsh 1300ms ease-out var(--die-at, 0ms) both; }
+#game .table .card.fx-die .avatar::before { animation: dieScorch 1300ms ease-out var(--die-at, 0ms) both; }
+#game .table .card.fx-die::after { animation: dieSeal 520ms cubic-bezier(.2,.8,.2,1) calc(780ms + var(--die-at, 0ms)) both; }
+@keyframes dieBurn {
+  from { -webkit-mask-size: 136% 128%; mask-size: 136% 128%; }
+  to   { -webkit-mask-size: 100% 100%; mask-size: 100% 100%; }
+}
+@keyframes dieAsh {
+  /* 函数列表三帧保持一致，才能平滑插值 */
+  0%   { filter: grayscale(0) sepia(.9) saturate(3) brightness(1.6) contrast(1) hue-rotate(-16deg); }
+  30%  { filter: grayscale(.3) sepia(.8) saturate(2) brightness(1.1) contrast(1) hue-rotate(-9deg); }
+  100% { filter: grayscale(1) sepia(.2) saturate(1) brightness(.5) contrast(1.08) hue-rotate(0deg); }
+}
+@keyframes dieScorch {
+  0%   { opacity: .2; box-shadow: inset 0 0 30px 10px rgba(255, 128, 48, .9); }
+  45%  { opacity: .8; box-shadow: inset 0 0 22px 5px rgba(255, 98, 40, .55); }
+  100% { opacity: 1; box-shadow: inset 0 0 14px 2px rgba(255, 98, 40, 0); }
+}
+@keyframes dieSeal {
+  0%   { opacity: 0; transform: rotate(-40deg) scale(2.4); }
+  60%  { opacity: 1; transform: rotate(-8deg) scale(.9); }
+  80%  { transform: rotate(-13deg) scale(1.05); }
+  100% { opacity: 1; transform: rotate(-12deg) scale(1); }
+}
+@media (max-width: 700px) {
+  /* 手机上标签挂在卡外（top:-8px），出局卡的毛边遮罩会把它切掉：收进卡内 */
+  #game .table .card.dead .tag { top: 8px; }
+  #game .table .card.dead .tag + .tag { top: 26px; }
+  #game .table .card.dead::after { width: 28px; height: 28px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  #game::before, #game::after, #game .table .card .avatar { transition: none; }
+  #game .table .card.fx-die, #game .table .card.fx-die .avatar,
+  #game .table .card.fx-die .avatar::before, #game .table .card.fx-die::after { animation: none; }
+}
