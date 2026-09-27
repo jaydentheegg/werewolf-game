@@ -287,6 +287,21 @@ html[data-phase="day"] .card .sigil { --sig-cut: #d3cec2; }
 html[data-phase="day"] .rp-badge .sigil { --sig-cut: #d8d3c7; }
 .idcard .sigil { --sig-cut: #100e14; }
 
+/* 文字里的符号（fx.js 把日志 / 标题 / 按钮里的 emoji 换成 .glyph）：跟着字号和字色走。
+ * 原 emoji 留在 .glyph-src 里，只是看不见；镂空色单独走 --glyph-cut，
+ * 免得被上面 day 相位的 .card .sigil 浅色镂空盖掉。 */
+.glyph { display: inline-block; width: 1.05em; height: 1.05em; margin-right: .06em; vertical-align: -.17em; }
+.glyph .sigil { width: 100%; height: 100%; --sig-cut: var(--glyph-cut, #050506) !important; }
+.glyph[data-glyph="wolf"], .glyph[data-glyph="death"] { color: #d95b45; }
+.glyph.glyph-drop { display: inline; width: auto; height: auto; margin: 0; }   /* 只藏字，不占位 */
+.glyph-src {
+  position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0;
+  overflow: hidden; clip: rect(0 0 0 0); clip-path: inset(50%); white-space: nowrap;
+}
+.overlay { --glyph-cut: #172123; }
+.card .tag { --glyph-cut: #11191b; }
+.roster-row .ricon:has(> .glyph-drop:only-child) { display: none; }
+
 /* ============================================================
  * 按钮
  * ============================================================ */

@@ -4,7 +4,17 @@
 
 ## 当前功能：人物卡去掉画框（已实现 ✅）
 
-**git 状态（2026-09-27）：** 分支 claude/practical-cray-nxte8b，已 commit + push。版本号全量 bump 到 ?v=46。
+**git 状态（2026-09-27）：** 分支 claude/practical-cray-nxte8b，已 commit + push。版本号全量 bump 到 ?v=47。
+
+第三轮（建议 2）：界面文字里的 emoji → 原创符号（fx.js「九·二」）
+- game.js 的字符串一个没改（它们也进 G.events 给 AI 看、也广播给客人）；fx.js 在 body 上挂 MutationObserver，
+  把文本节点里的 emoji 换成 <ww-glyph>：角色 → 原有 sig-*；🌙🌑 → sig-moon，☀️🌅 → sig-sun，☠️ → sig-death（index.html 新增三枚）；
+  其余装饰 emoji（👑🗣️🗳️⚖️🧠…）连同后面的空格藏掉。过场大字（#veil）里一律藏掉，圣像徽章已经表达了角色。
+- 原 emoji 留在视觉隐藏的 <ww-glyph-src> 里 → textContent 不变：身份卡识别、结算 fx-win-*、保存故事、读屏都照旧。
+- 必须用自定义标签：`.ovroles span`、`.comic-panel span` 这类泛 span 选择器会给 span 套边框 / 大字号。
+- 跳过 .avatar、#rolePreview（各有自己的替换）、option/select/textarea、svg。镂空色走 --glyph-cut（!important，
+  防 day 相位的 `.card .sigil` 浅色镂空）；狼 / 骷髅固定砖红 #d95b45。
+- 验证：mock 整局跑到结算，全程扫描可见文本无 emoji 泄漏；file:// 正常；2x 屏下符号清晰。1x 下村民符号略像「0」（原有 sigil，旁边总跟着「村民」二字）。
 
 第二轮（用户从建议里挑了 1 / 4 / 7）：
 - 发言钟面整体下移 84px（.tablewrap 470→554、.table inset-top 84px、表盘弧线 72→156px）：放大的发言人卡顶

@@ -752,6 +752,73 @@
   const rp = $('rolePreview');
   if (rp) { new MutationObserver(upgradeRolePreview).observe(rp, { childList: true }); upgradeRolePreview(); }
 
+  /* ============================================================
+   * 九·二、文字里的 emoji → 原创符号
+   * 日志、标题、按钮、标签里的 emoji 是 game.js 写的，也进了发给 AI 的公开记录，
+   * 源头不动。这里只换"看到的样子"：原 emoji 原样留在视觉隐藏的 .glyph-src 里，
+   * textContent 一字不变——身份卡识别、结算判定、保存故事、读屏都照旧。
+   * 角色 / 昼夜 / 出局换成符号；其余纯装饰的 emoji 连同后面的空格一起藏掉。
+   * 用自定义标签 <ww-glyph> 而不是 span：样式表里有 `.ovroles span`、`.comic-panel span`
+   * 这类泛选择器，span 会被它们套上边框 / 大字号。
+   * ============================================================ */
+  const GLYPH_OF = {
+    '🐺': 'wolf', '🔮': 'seer', '🧪': 'witch', '🏹': 'hunter', '👤': 'villager', '🙈': 'unknown',
+    '🌙': 'moon', '🌑': 'moon', '☀': 'sun', '🌅': 'sun', '☠': 'death',
+  };
+  const GLYPH_DROP = ['👑', '🔍', '🧠', '💭', '⚠', '✅', '💊', '🗣', '🗳', '📊', '⚖', '🏆', '🌫', '🎭', '🔔', '📴', '🎉'];
+  const GLYPH_ALT = [...Object.keys(GLYPH_OF), ...GLYPH_DROP].join('|');
+  const GLYPH_RE = new RegExp(`(${GLYPH_ALT})(\\uFE0F?)( ?)`, 'gu');
+  const GLYPH_TEST = new RegExp(GLYPH_ALT, 'u');
+  /* 卡面头像 / 角色胶囊有自己的替换；表单控件里放不进元素 */
+  const GLYPH_SKIP = '.glyph, .avatar, .vote-portrait, #rolePreview, svg, option, select, textarea, script, style';
+
+  function glyphText(node) {
+    const txt = node.data;
+    const host = node.parentElement;
+    if (!GLYPH_TEST.test(txt) || !host || host.closest(GLYPH_SKIP)) return;
+    const dropAll = !!host.closest('#veil');   // 过场大字旁已有角色圣像，再放符号就重复了
+    const frag = document.createDocumentFragment();
+    let at = 0;
+    for (const m of txt.matchAll(GLYPH_RE)) {
+      if (m.index > at) frag.append(txt.slice(at, m.index));
+      const sig = dropAll ? null : GLYPH_OF[m[1]];
+      const wrap = document.createElement('ww-glyph');
+      const src = document.createElement('ww-glyph-src');
+      src.className = 'glyph-src';
+      if (sig) {
+        wrap.className = 'glyph';
+        wrap.dataset.glyph = sig;
+        wrap.innerHTML = sigilSVG(sig);
+        src.textContent = m[1] + m[2];
+      } else {
+        wrap.className = 'glyph glyph-drop';
+        src.textContent = m[0];
+      }
+      wrap.append(src);
+      frag.append(wrap);
+      if (sig && m[3]) frag.append(m[3]);
+      at = m.index + m[0].length;
+    }
+    if (at < txt.length) frag.append(txt.slice(at));
+    node.replaceWith(frag);
+  }
+  function glyphify(root) {
+    if (root.nodeType === Node.TEXT_NODE) { glyphText(root); return; }
+    if (root.nodeType !== Node.ELEMENT_NODE || root.closest(GLYPH_SKIP)) return;
+    const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+    const hits = [];
+    for (let n = walker.nextNode(); n; n = walker.nextNode()) if (GLYPH_TEST.test(n.data)) hits.push(n);
+    hits.forEach(glyphText);
+  }
+  glyphify(document.body);
+  /* 回调在微任务里跑，替换发生在绘制之前，不会先闪一下 emoji */
+  new MutationObserver((muts) => {
+    for (const m of muts) {
+      if (m.type === 'characterData') { if (m.target.isConnected) glyphText(m.target); }
+      else m.addedNodes.forEach((n) => { if (n.isConnected) glyphify(n); });
+    }
+  }).observe(document.body, { childList: true, subtree: true, characterData: true });
+
   /* 仪式圆盘刻度（一次性生成，纯装饰） */
   const ticks = document.querySelector('.disc-ticks');
   if (ticks) {
