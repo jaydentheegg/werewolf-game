@@ -10,8 +10,8 @@
 <link rel="preload" as="image" href="assets/midnight-village.jpg" />
 <link rel="preload" as="image" href="assets/midnight-characters.webp" />
 <link rel="preload" as="image" href="assets/reliquary-frame.webp" />
-<link rel="stylesheet" href="style.css?v=43" />
-<link rel="stylesheet" href="midnight.css?v=43" />
+<link rel="stylesheet" href="style.css?v=44" />
+<link rel="stylesheet" href="midnight.css?v=44" />
 </head>
 <body>
 
@@ -82,7 +82,7 @@
       <button class="game-menu-item" type="button" data-menu-action="settings"><i class="menu-brush" aria-hidden="true"></i><span class="menu-caret" aria-hidden="true">▶</span><span>SETTINGS</span><small>设置</small></button>
       <button class="game-menu-item" type="button" data-menu-action="credits"><i class="menu-brush" aria-hidden="true"></i><span class="menu-caret" aria-hidden="true">▶</span><span>CREDITS</span><small>制作名单</small></button>
     </nav>
-    <p class="start-meta">6—12 PLAYERS&nbsp;&nbsp;·&nbsp;&nbsp;SOLO / P2P MULTIPLAYER</p>
+    <p class="start-meta">6—12 PLAYERS&nbsp;&nbsp;·&nbsp;&nbsp;SOLO / P2P MULTIPLAYER&nbsp;&nbsp;·&nbsp;&nbsp;AI THAT THINKS</p>
     <div id="menuPanel" class="menu-panel" role="dialog" aria-modal="true" aria-labelledby="menuPanelTitle" hidden>
       <button id="menuPanelClose" class="menu-panel-close" type="button" aria-label="关闭">×</button>
       <p class="eyebrow">MIDNIGHT / 天黑，请闭眼</p>
@@ -157,6 +157,19 @@
         </div>
       </div>
 
+      <div class="entry-row" data-key="brain">
+        <button class="entry-item" type="button" aria-expanded="false">
+          <i class="entry-brush" aria-hidden="true"></i>
+          <span class="entry-caret" aria-hidden="true">▶</span>
+          <span class="entry-key">BRAIN</span>
+          <span class="entry-val" data-val="brain">连接中…</span>
+          <small>AI 的大脑</small>
+        </button>
+        <div class="entry-drawer" hidden>
+          <div class="entry-slot" data-slot="brain"></div>
+        </div>
+      </div>
+
       <div class="entry-row" data-key="start">
         <button class="entry-item is-final" type="button" id="startBtn">
           <i class="entry-brush" aria-hidden="true"></i>
@@ -195,6 +208,16 @@
       <p id="compWarn" class="comp-warn" role="status" aria-live="polite"></p>
     </div>
     <button type="button" id="compToggle" class="comp-toggle hidden" aria-expanded="true" aria-controls="compEditor">自定义阵营人数</button>
+  </div>
+  <!-- AI 大脑：ai.js 负责状态文字与开关；game.js 只读 window.wwAI -->
+  <div class="entry-part" data-part="brain">
+    <p class="entry-note ai-status" id="aiStatus" role="status" aria-live="polite">正在寻找 AI 服务…</p>
+    <div class="ai-chips" role="group" aria-label="AI 玩家用什么来思考">
+      <button type="button" class="entry-chip" data-ai-mode="on" aria-pressed="false">CLAUDE 思考</button>
+      <button type="button" class="entry-chip" data-ai-mode="off" aria-pressed="false">经典规则</button>
+      <button type="button" class="entry-mini" id="aiRetry" hidden>重新检测</button>
+    </div>
+    <label class="ai-reveal"><input type="checkbox" id="aiReveal" /> <span>旁观心声 —— 把 AI 的内心独白实时写进纪事（仅单机生效，会剧透身份）</span></label>
   </div>
 </div>
 
@@ -295,6 +318,19 @@
         </div>
       </div>
 
+      <div class="entry-row hidden" data-key="brain" id="mpBrainRow">
+        <button class="entry-item" type="button" aria-expanded="false">
+          <i class="entry-brush" aria-hidden="true"></i>
+          <span class="entry-caret" aria-hidden="true">▶</span>
+          <span class="entry-key">BRAIN</span>
+          <span class="entry-val" data-val="brain">连接中…</span>
+          <small>AI 的大脑</small>
+        </button>
+        <div class="entry-drawer" hidden>
+          <div class="entry-slot" data-slot="brain"></div>
+        </div>
+      </div>
+
       <div class="entry-row" data-key="start">
         <button id="mpStartBtn" class="entry-item is-final hidden" type="button">
           <i class="entry-brush" aria-hidden="true"></i>
@@ -376,6 +412,10 @@
     <h2 id="ovTitle"></h2>
     <p id="ovText"></p>
     <div id="ovRoles" class="ovroles"></div>
+    <section id="aiMinds" class="ai-minds hidden" aria-label="AI 心声回放">
+      <p class="eyebrow">AI 心声回放 / WHAT THEY WERE THINKING</p>
+      <div id="aiMindsList" class="ai-minds-list"></div>
+    </section>
     <div id="comicRecap" class="comic-recap" aria-label="本局故事回顾"></div>
     <button id="saveStory" class="btn ghost" type="button">保存本局故事 ↓</button>
     <button id="againBtn" class="btn primary">再来一局 / 返回</button>
@@ -401,13 +441,14 @@
 <script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/gsap.min.js"
         integrity="sha384-HOvlOYPIs/zjoIkWUGXkVmXsjr8GuZLV+Q+rcPwmJOVZVpvTSXQChiN4t9Euv9Vc"
         crossorigin="anonymous" referrerpolicy="no-referrer"></script>
-<script src="motion.js?v=43"></script>
-<script src="burn.js?v=43"></script>
-<script src="net.js?v=43"></script>
-<script src="game.js?v=43"></script>
-<script src="compose.js?v=43"></script>
-<script src="fx.js?v=43"></script>
-<script src="midnight.js?v=43"></script>
-<script src="entry.js?v=43"></script>
+<script src="motion.js?v=44"></script>
+<script src="burn.js?v=44"></script>
+<script src="net.js?v=44"></script>
+<script src="ai.js?v=44"></script>
+<script src="game.js?v=44"></script>
+<script src="compose.js?v=44"></script>
+<script src="fx.js?v=44"></script>
+<script src="midnight.js?v=44"></script>
+<script src="entry.js?v=44"></script>
 </body>
 </html>

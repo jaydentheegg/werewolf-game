@@ -797,7 +797,20 @@ html:not(.gsap-ready) .cast-card:hover, html:not(.gsap-ready) .cast-card:focus {
 .entry-screen .entry-row:nth-child(4) { animation-delay: 210ms; }
 .entry-screen .entry-row:nth-child(5) { animation-delay: 280ms; }
 .entry-screen .entry-row:nth-child(6) { animation-delay: 350ms; }
+.entry-screen .entry-row:nth-child(7) { animation-delay: 420ms; }
 @keyframes entryRise { from { opacity: 0; transform: translateY(14px); } }
+
+/* BRAIN：AI 玩家用什么思考（ai.js 写状态，玩家在这里切换） */
+.entry-drawer .ai-status { margin-bottom: 16px; }
+.ai-chips { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 16px; }
+.ai-chips .entry-chip { min-width: 0; padding: 11px 18px; font-size: 12px; letter-spacing: .18em; }
+.ai-chips .entry-mini[hidden] { display: none; }
+.entry-drawer .ai-reveal {
+  display: flex; align-items: flex-start; gap: 10px; margin: 0; cursor: pointer;
+  font: 11px/1.8 var(--font-ui), sans-serif; letter-spacing: .08em; text-transform: none; color: #9aa4a0;
+}
+.entry-drawer .ai-reveal input { flex: none; margin: 5px 0 0; accent-color: #d95b45; }
+.entry-drawer .ai-reveal:has(input:disabled) { opacity: .4; cursor: not-allowed; }
 
 @media (max-width: 700px) {
   .entry-screen { padding: 40px 6% 52px; min-height: calc(100vh - 78px); }
