@@ -20,7 +20,7 @@ button, a { -webkit-tap-highlight-color: transparent; }
 body[data-screen="setup"] #fxCanvas, body[data-screen="lobby"] #fxCanvas { visibility: hidden; }
 #setup { max-width: none; padding: 0; }
 .midnight-hero { position: relative; min-height: min(900px, calc(100svh - 76px)); isolation: isolate; overflow: hidden; background: #121a1b; }
-.hero-art { position: absolute; inset: -2%; z-index: -2; background: url('assets/midnight-village.jpg') center 49% / cover no-repeat; transform: translate3d(var(--hero-x, 0px), var(--hero-y, 0px), 0) scale(1.025); transition: transform 700ms ease-out; }
+.hero-art { position: absolute; inset: -2%; z-index: -2; background: url('assets/web/midnight-village.webp') center 49% / cover no-repeat; transform: translate3d(var(--hero-x, 0px), var(--hero-y, 0px), 0) scale(1.025); transition: transform 700ms ease-out; }
 .midnight-hero::after { content: ''; position: absolute; inset: 0; z-index: -1; background: linear-gradient(90deg, #11191bea, #11191b18 68%, transparent), linear-gradient(0deg, #11191b, transparent 22%); pointer-events: none; }
 .hero-caption { position: absolute; top: 30px; right: 4.5%; font: 10px var(--font-ui); letter-spacing: .25em; color: #dfd1b7; }
 .hero-copy { padding: clamp(70px, 9vh, 120px) 0 100px 7%; width: 64%; }
@@ -45,9 +45,8 @@ body[data-screen="setup"] #fxCanvas, body[data-screen="lobby"] #fxCanvas { visib
 .cast-heading em, .invitation-title em { color: #a84130; font-style: normal; }
 .cast-heading > p:last-child { font-size: 11px; line-height: 1.8; color: #585a50; }
 .cast-gallery { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 17px; }
-.cast-card { position: relative; min-width: 0; padding-top: 8px; border-top: 1px solid #182526; }
-.portrait, .card .avatar[data-role] { position: relative; background-image: url('assets/midnight-characters.webp'); background-size: 300% 200%; background-position: 100% 100%; background-repeat: no-repeat; aspect-ratio: 1; }
-.portrait::after { content: ''; position: absolute; inset: -5px; background: url('assets/gilded-frame.svg') center / 100% 100% no-repeat; pointer-events: none; }
+.cast-card { position: relative; min-width: 0; }
+.portrait, .card .avatar[data-role] { position: relative; background-image: url('assets/web/midnight-characters.webp'); background-size: 300% 200%; background-position: 100% 100%; background-repeat: no-repeat; aspect-ratio: 1; }
 [data-role="wolf"].portrait, .card .avatar[data-role="wolf"] { background-position: 0 0; }
 [data-role="seer"].portrait, .card .avatar[data-role="seer"] { background-position: 50% 0; }
 [data-role="witch"].portrait, .card .avatar[data-role="witch"] { background-position: 100% 0; }
@@ -55,7 +54,7 @@ body[data-screen="setup"] #fxCanvas, body[data-screen="lobby"] #fxCanvas { visib
 [data-role="villager"].portrait, .card .avatar[data-role="villager"] { background-position: 50% 100%; }
 .cast-card .portrait { width: 100%; filter: saturate(.6); transition: filter 250ms, transform 250ms; }
 .cast-card:hover .portrait { filter: saturate(1); transform: translateY(-5px); }
-.cast-number { position: absolute; top: 18px; left: 10px; font: italic 14px Georgia, serif; color: #843124; }
+.cast-number { position: absolute; top: 10px; left: 12px; font: italic 14px Georgia, serif; color: #843124; text-shadow: 0 1px 6px #000; }
 .cast-card h3 { font: 600 18px var(--font-display); margin: 15px 0 8px; }
 .cast-card h3 small { display: block; font: 8px var(--font-ui); letter-spacing: .15em; margin-top: 6px; color: #7f4938; }
 .cast-card p { font-size: 10px; color: #54584f; line-height: 1.6; }
@@ -119,7 +118,6 @@ html[data-phase="day"] #game .action { background: #f3ead7; border-color: #8c745
 html[data-phase="day"] .action .btn { background: #e5dac2; color: #202728; border-color: #9a8d73; }
 html[data-phase="day"] .action .btn:hover { background: #a84430; color: #fff3dc; }
 html[data-phase="day"] #game .card.human { border-color: #985139; }
-html[data-phase="day"] #game .card { box-shadow: inset 0 0 0 3px #f2e9d4, inset 0 0 0 4px #99723e66, 0 5px 15px #30220b18; }
 html[data-phase="day"] #game .card.dead::before { background: url('assets/gilded-frame.svg') center / 100% 100% no-repeat; }
 @media (min-width: 1024px) {
   #game .tablewrap { height: 620px; align-self: start; }
@@ -144,8 +142,8 @@ html[data-phase="day"] #game .card.dead::before { background: url('assets/gilded
 }
 .veil { background: #121a1bf2; }
 .veilInner { font-family: var(--font-display); }
-.idcard-stage { padding: 20px; background: #11191bf5; overflow-y: auto; }
-.idcard { width: min(390px, 88vw); aspect-ratio: auto; padding: 20px 24px 22px; gap: 8px; background: #eee4ce; border: 1px solid #ad9776; box-shadow: 10px 12px 0 #070e10; animation: letterReveal 550ms var(--ease) both; }
+.idcard-stage { padding: 20px; background: #030304f5; overflow-y: auto; }
+.idcard { width: min(390px, 88vw); aspect-ratio: auto; padding: 20px 24px 22px; gap: 8px; background: #eee4ce; border: 0; box-shadow: 0 30px 90px #000d; animation: letterReveal 550ms var(--ease) both; }
 .identity-letter { color: #83513d; font: 8px var(--font-ui); letter-spacing: .13em; margin-bottom: 4px; }
 .identity-portrait { width: min(245px, 35vh); flex-shrink: 0; }
 .idcard-sigil { position: absolute; top: 45px; right: 20px; width: 36px; height: 36px; padding: 9px; border-radius: 50%; background: #9a3e2c; box-shadow: 0 0 0 3px #9a3e2c44; }
@@ -234,26 +232,23 @@ html[data-phase="day"] #game .card.dead::before { background: url('assets/gilded
   background: linear-gradient(0deg, #0d191cfa 0%, #0d191ccb 23%, transparent 64%, #11191b25);
   pointer-events: none;
 }
-#game .table .card::before { inset: -4px; background-image: url('assets/reliquary-frame.webp'); z-index: 3; }
-.card-ornament { position: absolute; inset: -8% -7%; background: url('assets/card-flourishes.svg') center / 100% 100% no-repeat; pointer-events: none; z-index: 5; }
-.portrait::after, #game .table .card::before, .card-ornament { filter: brightness(.38) saturate(.28); }
+/* 人物卡不再加画框：画框层与叶饰一律不画，插画本身就是卡面。 */
+.card-ornament { display: none; }
 #game .table .card .nm { color: #f3e5c7; text-shadow: 0 1px 5px #000; margin: 0 2px 5px; }
 #game .table .card .meta, #game .table .card .meta b { color: #dacaa7; margin: 0 2px; }
 #game .table .card .tag { position: absolute; top: 8px; right: 8px; bottom: auto; background: #11191bdc; margin: 0; z-index: 4; border-color: #c7a15f; color: #edcf93; }
 #game .table .card .tag + .tag { top: 29px; }
 #game .table .card.dead .avatar { opacity: .65; filter: grayscale(.85); }
 #game .table .card.dead .portrait-art { background-position: 100% 100%; }
-html[data-phase="day"] #game .table .card::before { background-image: url('assets/reliquary-frame.webp'); }
 html[data-phase="day"] #game .table .card .tag { background: #11191bdc; color: #edcf93; }
-.idcard { height: min(620px, calc(100svh - 66px)); width: min(400px, 82vw); justify-content: flex-end; overflow: visible; isolation: isolate; padding: 55px 50px 86px; color: #f3e5c7; background: #172326; }
+.idcard { height: min(620px, calc(100svh - 66px)); width: min(400px, 82vw); justify-content: flex-end; overflow: visible; isolation: isolate; padding: 40px 32px 30px; color: #f3e5c7; background: #172326; }
 .idcard .identity-portrait { position: absolute; inset: 0; height: 100%; width: 100%; aspect-ratio: auto; transform: none; z-index: -2; overflow: hidden; background-image: none; }
 .idcard .identity-portrait .portrait { position: absolute; top: 0; left: 50%; height: 100%; width: auto; aspect-ratio: 1; transform: translateX(-50%); }
 .idcard .identity-portrait .portrait::after { display: none; }
 .idcard .identity-portrait::after { display: none; }
-.idcard::before { inset: -5px; width: auto; height: auto; border: 0; background: url('assets/reliquary-frame.webp') center / 100% 100% no-repeat; opacity: 1; z-index: 4; pointer-events: none; }
-.idcard::before { filter: brightness(.38) saturate(.28); }
+.idcard::before, .idcard .idcard-sigil { display: none; }
 .idcard::after { inset: 0; width: auto; height: auto; border: 0; background: linear-gradient(0deg, #101b1d 0%, #101b1df5 16%, #101b1dad 38%, transparent 68%, #101b1d99); opacity: 1; z-index: -1; }
-.idcard .identity-letter { position: absolute; top: 17%; left: 15%; right: 15%; color: #f3e5c7; }
+.idcard .identity-letter { position: absolute; top: 26px; left: 28px; right: 28px; color: #f3e5c7; text-shadow: 0 1px 6px #000; }
 .idcard .idcard-name { color: #f3e5c7; text-shadow: 0 2px 8px #000; }
 .idcard .idcard-camp { color: #dfb881; }
 .idcard .idcard-desc { color: #e5d7ba; }
@@ -262,7 +257,7 @@ html[data-phase="day"] #game .table .card .tag { background: #11191bdc; color: #
 .idcard .idcard-continue:hover { background: #3c3b2c; }
 #identityCard .idcard-continue { color: #e3d5b5; border-color: #665d43; }
 @media (max-width: 700px) {
-  .idcard { padding: 45px 42px 78px; }
+  .idcard { padding: 34px 24px 26px; }
   .idcard .idcard-name { font-size: 27px; }
   .idcard .idcard-desc { font-size: 11px; }
   #game .table { gap: 20px 15px; }
@@ -291,7 +286,6 @@ body, #setup, #lobby, #game, .cast-section, .invitation {
 .cast-section { border-top: 1px solid #ffffff0c; }
 .cast-heading h2, .cast-card h3, .invitation-title, .invitation .lede { color: #e7e2d8; }
 .cast-heading > p:last-child, .cast-card p, .invitation { color: #777873; }
-.cast-card { border-top-color: #ffffff12; }
 .cast-number, .cast-card h3 small, .cast-heading em, .invitation-title em,
 .cast-heading .eyebrow, .invitation .eyebrow { color: #82674a; }
 .invitation .prologue-form {
@@ -344,23 +338,24 @@ html[data-phase="day"] .action .btn { background: #080809; color: #d7d0c5; borde
 #game .table .card.human::before, #game .table .card.playing::after { display: none !important; }
 
 @media (min-width: 1024px) {
+  /* 整个钟面下移 84px：发言人（放大 1.15 倍）的卡顶不再被裁掉，XII 落在它头顶上方。 */
   #game[data-stage="speech"] .tablewrap {
-    position: relative; height: 470px; overflow: hidden; perspective: 1400px;
+    position: relative; height: 554px; overflow: hidden; perspective: 1400px;
     mask-image: linear-gradient(#000 0 78%, transparent 100%);
     -webkit-mask-image: linear-gradient(#000 0 78%, transparent 100%);
   }
   #game[data-stage="speech"] .tablewrap::before {
     content: ''; position: absolute; z-index: 0; pointer-events: none;
-    left: -6%; top: 72px; width: 112%; height: 660px;
+    left: -6%; top: 156px; width: 112%; height: 660px;
     border: 1px solid #6e5a3d45; border-bottom-color: transparent; border-radius: 50%;
     box-shadow: inset 0 1px 0 #b08b5740, 0 -12px 55px #8b6c3e0b;
   }
   #game[data-stage="speech"] .tablewrap::after {
-    content: 'XII'; position: absolute; top: 46px; left: 50%; transform: translateX(-50%);
-    color: #806848; font: 10px Georgia, serif; letter-spacing: .28em;
+    content: 'XII'; position: absolute; top: 8px; left: 50%; transform: translateX(-50%);
+    color: #806848; font: 10px Georgia, serif; letter-spacing: .28em; padding-left: .28em;
   }
   #game[data-stage="speech"] .ritual-disc { display: none; }
-  #game[data-stage="speech"] .table { position: absolute; inset: 0; height: 100%; transform-style: preserve-3d; }
+  #game[data-stage="speech"] .table { position: absolute; inset: 84px 0 auto; height: 470px; transform-style: preserve-3d; }
   #game[data-stage="speech"] .table .card {
     left: var(--clock-x); top: var(--clock-y); z-index: calc(20 - var(--i));
     width: clamp(112px, 10vw, 144px); height: auto; margin: 0;
@@ -406,7 +401,7 @@ html[data-phase="day"] .action .btn { background: #080809; color: #d7d0c5; borde
 .vote-portrait .sigil { display: none; }
 .vote-portrait .portrait-art {
   position: absolute; top: -6%; left: 50%; height: 112%; width: auto; aspect-ratio: 1;
-  transform: translateX(-50%); background-image: url('assets/midnight-characters.webp');
+  transform: translateX(-50%); background-image: url('assets/web/midnight-characters.webp');
   background-size: 300% 200%; background-repeat: no-repeat;
 }
 .vote-portrait::after {
@@ -465,7 +460,7 @@ body[data-screen="setup"] #setup { min-height: 100svh; }
 }
 .midnight-hero .hero-art {
   inset: 0 0 0 auto; width: min(62%, 1180px);
-  background: url('assets/midnight-village.jpg') right center / cover no-repeat;
+  background: url('assets/web/midnight-village.webp') right center / cover no-repeat;
   transform: translate3d(var(--hero-x, 0px), var(--hero-y, 0px), 0) scale(1.03);
   filter: grayscale(.5) contrast(1.14) brightness(.42) saturate(.85);
   -webkit-mask-image: linear-gradient(90deg, transparent 0, #000 27%, #000 100%);
@@ -616,7 +611,7 @@ html:not(.gsap-ready) .cast-card:hover, html:not(.gsap-ready) .cast-card:focus {
 /* The village keeps bleeding in from the right, as on the cover. */
 .entry-screen .entry-bg {
   position: absolute; inset: 0; z-index: -1; pointer-events: none; display: block;
-  background: url('assets/midnight-village.jpg') right center / cover no-repeat;
+  background: url('assets/web/midnight-village.webp') right center / cover no-repeat;
   filter: grayscale(.55) contrast(1.12) brightness(.3) saturate(.85);
   -webkit-mask-image: linear-gradient(90deg, transparent 0, #000 62%);
   mask-image: linear-gradient(90deg, transparent 0, #000 62%);
@@ -833,4 +828,131 @@ html:not(.gsap-ready) .cast-card:hover, html:not(.gsap-ready) .cast-card:focus {
 @media (prefers-reduced-motion: reduce) {
   .entry-item .entry-brush { transition: none !important; }
   .entry-screen .entry-row, .entry-drawer { animation: none !important; }
+}
+
+/* ============================================================
+   DAY / NIGHT LIGHT — v48
+   对局仍是黑底，昼夜只换一层光：夜里一缕冷月光、卡面暗而冷；
+   白天圆桌下亮起一团暖光、卡面回暖。两层交叉淡入淡出。
+   氛围画布在对局里本来就被 #game 的黑底挡住，只在 1420px 以外的
+   两侧露出来（白天是两条灰带），这里直接收掉，光改由 #game 自己铺满视口。
+   ============================================================ */
+body[data-screen="game"] #fxCanvas { visibility: hidden; }
+#game { background: transparent; }
+/* #game 是 .screen（relative + z-index:2）自成层叠上下文：-1 落在内容之下 */
+#game::before, #game::after {
+  content: ''; position: fixed; inset: 0; z-index: -1; pointer-events: none;
+  transition: opacity 1.6s ease;
+}
+#game::before {   /* 夜：冷月光自右上斜落 */
+  background:
+    radial-gradient(58% 52% at 80% -10%, rgba(132, 152, 190, .12), transparent 70%),
+    radial-gradient(44% 40% at 40% 54%, rgba(92, 108, 138, .05), transparent 75%);
+}
+#game::after {    /* 昼：圆桌下的暖光 + 顶上一线晨光 */
+  opacity: 0;
+  background:
+    radial-gradient(46% 44% at 40% 54%, rgba(214, 146, 74, .17), transparent 72%),
+    radial-gradient(80% 40% at 50% -8%, rgba(223, 177, 138, .10), transparent 70%);
+}
+html[data-phase="day"] #game::before { opacity: 0; }
+html[data-phase="day"] #game::after { opacity: 1; }
+#game .table .card .avatar { filter: var(--card-tone, saturate(.82)); transition: filter 1.2s ease; }
+html[data-phase="night"] #game .table { --card-tone: saturate(.6) brightness(.78); }
+html[data-phase="day"] #game .table { --card-tone: saturate(.95) sepia(.1) brightness(1.04); }
+
+/* ============================================================
+   BURNT EXIT — v48  出局：卡面被火燎过
+   静态：插画成灰烬色，焦黑毛边（SVG 噪声位移做遮罩），四周焦痕，
+   左上角一枚砖红蜡封（骷髅，与日志里的出局符号同形）。
+   动效 .fx-die（时机由 fx.js 决定：等过场遮罩收起才播）：
+   先窜起一圈余烬橙光 → 毛边从卡外烧进来 → 蜡封盖下。
+   不碰卡片的 transform——圆桌 / 时钟布局靠它定位。
+   ============================================================ */
+#game .table .card.dead {
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 145' preserveAspectRatio='none'%3E%3Cfilter id='b' x='-6%25' y='-6%25' width='112%25' height='112%25'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.075' numOctaves='3' seed='11'/%3E%3CfeDisplacementMap in='SourceGraphic' scale='9' xChannelSelector='R' yChannelSelector='G'/%3E%3C/filter%3E%3Crect x='4.5' y='3.5' width='91' height='138' filter='url(%23b)'/%3E%3C/svg%3E") center / 100% 100% no-repeat;
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 145' preserveAspectRatio='none'%3E%3Cfilter id='b' x='-6%25' y='-6%25' width='112%25' height='112%25'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.075' numOctaves='3' seed='11'/%3E%3CfeDisplacementMap in='SourceGraphic' scale='9' xChannelSelector='R' yChannelSelector='G'/%3E%3C/filter%3E%3Crect x='4.5' y='3.5' width='91' height='138' filter='url(%23b)'/%3E%3C/svg%3E") center / 100% 100% no-repeat;
+  box-shadow: none;
+}
+#game .table .card.dead .avatar {
+  opacity: 1; filter: grayscale(1) sepia(.2) saturate(1) brightness(.5) contrast(1.08) hue-rotate(0deg);
+}
+#game .table .card.dead .avatar::before {
+  content: ''; position: absolute; inset: 0; z-index: 1; pointer-events: none;
+  background:
+    radial-gradient(ellipse 74% 66% at 50% 46%, transparent 50%, rgba(96, 38, 16, .42) 74%, rgba(18, 7, 3, .94) 97%),
+    radial-gradient(30% 22% at 10% 92%, rgba(10, 4, 2, .8), transparent 70%),
+    radial-gradient(26% 20% at 94% 8%, rgba(10, 4, 2, .7), transparent 70%);
+}
+#game .table .card.dead::after {
+  content: ''; display: block; position: absolute; z-index: 4;
+  inset: 9px auto auto 9px; width: 34px; height: 34px; padding: 0;
+  font-size: 0; color: transparent; opacity: 1;
+  border-radius: 47% 53% 51% 49% / 53% 47% 53% 47%;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cpath fill='%233c0a04' fill-opacity='.62' fill-rule='evenodd' d='M16 4Q25.6 4 25.6 13.4Q25.6 18.6 22 20.8V24.6Q22 27 19.6 27H12.4Q10 27 10 24.6V20.8Q6.4 18.6 6.4 13.4Q6.4 4 16 4ZM9.4 14a2.7 2.7 0 1 0 5.4 0a2.7 2.7 0 1 0-5.4 0ZM17.2 14a2.7 2.7 0 1 0 5.4 0a2.7 2.7 0 1 0-5.4 0ZM16 17.4l1.6 2.7h-3.2ZM13.3 22.8h1.3v4.2h-1.3Z M15.35 22.8h1.3v4.2h-1.3Z M17.4 22.8h1.3v4.2h-1.3Z'/%3E%3C/svg%3E") center / 60% no-repeat,
+              radial-gradient(circle at 34% 30%, #d0705a, #a63a2b 48%, #6a1f15 100%);
+  box-shadow: inset 0 0 0 3px rgba(122, 36, 23, .55), inset 0 0 0 4px rgba(255, 196, 172, .16),
+              0 2px 5px rgba(0, 0, 0, .65);
+  transform: rotate(-12deg);
+}
+#game .table .card.fx-die { animation: dieBurn 1300ms cubic-bezier(.3,.6,.3,1) var(--die-at, 0ms) both; }
+#game .table .card.fx-die .avatar { animation: dieAsh 1300ms ease-out var(--die-at, 0ms) both; }
+#game .table .card.fx-die .avatar::before { animation: dieScorch 1300ms ease-out var(--die-at, 0ms) both; }
+#game .table .card.fx-die::after { animation: dieSeal 520ms cubic-bezier(.2,.8,.2,1) calc(780ms + var(--die-at, 0ms)) both; }
+@keyframes dieBurn {
+  from { -webkit-mask-size: 136% 128%; mask-size: 136% 128%; }
+  to   { -webkit-mask-size: 100% 100%; mask-size: 100% 100%; }
+}
+@keyframes dieAsh {
+  /* 函数列表三帧保持一致，才能平滑插值 */
+  0%   { filter: grayscale(0) sepia(.9) saturate(3) brightness(1.6) contrast(1) hue-rotate(-16deg); }
+  30%  { filter: grayscale(.3) sepia(.8) saturate(2) brightness(1.1) contrast(1) hue-rotate(-9deg); }
+  100% { filter: grayscale(1) sepia(.2) saturate(1) brightness(.5) contrast(1.08) hue-rotate(0deg); }
+}
+@keyframes dieScorch {
+  0%   { opacity: .2; box-shadow: inset 0 0 30px 10px rgba(255, 128, 48, .9); }
+  45%  { opacity: .8; box-shadow: inset 0 0 22px 5px rgba(255, 98, 40, .55); }
+  100% { opacity: 1; box-shadow: inset 0 0 14px 2px rgba(255, 98, 40, 0); }
+}
+@keyframes dieSeal {
+  0%   { opacity: 0; transform: rotate(-40deg) scale(2.4); }
+  60%  { opacity: 1; transform: rotate(-8deg) scale(.9); }
+  80%  { transform: rotate(-13deg) scale(1.05); }
+  100% { opacity: 1; transform: rotate(-12deg) scale(1); }
+}
+@media (max-width: 700px) {
+  /* 手机上标签挂在卡外（top:-8px），出局卡的毛边遮罩会把它切掉：收进卡内 */
+  #game .table .card.dead .tag { top: 8px; }
+  #game .table .card.dead .tag + .tag { top: 26px; }
+  #game .table .card.dead::after { width: 28px; height: 28px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  #game::before, #game::after, #game .table .card .avatar { transition: none; }
+  #game .table .card.fx-die, #game .table .card.fx-die .avatar,
+  #game .table .card.fx-die .avatar::before, #game .table .card.fx-die::after { animation: none; }
+}
+
+/* ============================================================
+   SEAT FRAMES — v49
+   暗身份的座位原本是六把一模一样的空椅子。fx.js 按座位号在 .portrait-art 上写
+   --seat-*：同一间议事厅、不同的镜头（旗帜 / 烛台 / 椅背狼首 / 月亮 / 坐垫…）。
+   只看座位号，与身份无关；投票托盘复制头像时变量随之带走，两处取景一致。
+   ============================================================ */
+#game .table .card .avatar .portrait-art[data-role="unknown"],
+#game .table .card.dead .avatar .portrait-art,
+.vote-portrait .portrait-art[data-role="unknown"] {
+  top: var(--seat-top, -6%); height: var(--seat-zoom, 112%);
+  transform: translateX(calc(-50% + var(--seat-pan, 0%))) scaleX(var(--seat-flip, 1));
+}
+/* 有立绘的座位（自己 / 狼队友）：只镜像 + 小幅平移，脸不出画 */
+#game .table .card:not(.dead) .avatar .portrait-art:not([data-role="unknown"]),
+.vote-portrait .portrait-art:not([data-role="unknown"]) {
+  transform: translateX(calc(-50% + var(--seat-nudge, 0%))) scaleX(var(--seat-flip, 1));
+}
+/* 每个座位一处烛光，落在各自镜头里的烛台 / 月亮附近 */
+#game .table .card .avatar .portrait-art[data-role="unknown"]::after,
+.vote-portrait .portrait-art[data-role="unknown"]::after {
+  content: ''; display: block; position: absolute; inset: 0; pointer-events: none;
+  background: radial-gradient(circle at var(--seat-lx, 30%) var(--seat-ly, 40%), rgba(255, 176, 92, .26), transparent 36%);
+  mix-blend-mode: screen;
 }

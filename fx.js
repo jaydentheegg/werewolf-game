@@ -530,8 +530,56 @@
     let knownDead = null;
     const seen = new Set();
     const dying = new Map();
+    /* 出局动画（ember → 焦边 → 蜡封）约 1.3s。夜里的死亡在两张遮罩的空隙里
+     * 落到牌桌上，紧接着就被「天亮了」盖住——当场播谁也看不见。
+     * 所以：夜里死的（刀 / 毒 / 夜里的猎枪）先记下，等天亮那张遮罩收起再播；
+     * 白天死的（放逐 / 白天的猎枪）没有遮罩，当场播。 */
+    const DIE_MS = 1400;
+    const pendingDeaths = new Set();
+    const veilUp = () => !!veil && !veil.classList.contains('hidden');
+    const holdDeath = () => veilUp() || veilPhase === 'night';
+    const startDying = (card, id, t) => {
+      setVar(card, '--die-at', '0ms');
+      setCls(card, 'fx-die', true);
+      dying.set(id, t);
+    };
     let animatedSpeaker = null;
     let applying = false;          // 防止自身写入触发的递归观察
+
+    /* 暗身份的座位全是同一把空椅子。按座位号给每张卡一个固定"镜头"——缩放 / 平移 /
+     * 镜像 / 一处烛光——看起来是同一间议事厅的不同角落：旗帜、烛台、椅背狼首、月亮、坐垫……
+     * 只取决于座位号（公开信息），与身份无关，不泄露任何东西。
+     * 变量写在 .portrait-art 自己的 style 上：投票托盘复制头像 innerHTML 时会一起带走，
+     * 同一个座位在桌上和托盘里取景一致。有立绘的座位（自己 / 狼队友）只用镜像和小幅平移。
+     * 覆盖约束（卡片宽高比 ≈ 0.69）：|平移| ≤ (缩放 − 0.69) / (2 × 缩放)，1 − 缩放 ≤ 上移 ≤ 0。 */
+    const SEAT_FRAMES = [
+      // 缩放   平移%  上移%  镜像  烛光 x%, y%（画面坐标）
+      [1.12,    0,    -6,    1,   16, 40],   // 0 正面
+      [1.22,   15,    -4,    1,   14, 38],   // 1 左侧：旗帜、烛台
+      [1.22,  -15,    -4,    1,   84, 38],   // 2 右侧：披风、烛台
+      [1.5,     2,   -14,    1,   48, 30],   // 3 椅背狼首
+      [1.3,     0,     0,   -1,   50, 12],   // 4 月亮与横幅
+      [1.36,    8,   -34,    1,   40, 72],   // 5 红坐垫
+      [1.42,  -21,   -22,    1,   86, 40],   // 6 右侧雕像与烛
+      [1.42,   21,   -28,   -1,   12, 44],   // 7 左侧雕像与烛
+      [1.22,   15,    -8,   -1,   14, 38],   // 8 左侧（镜像）
+      [1.6,   -20,   -22,   -1,   66, 38],   // 9 胸针与披风
+      [1.3,    12,   -18,   -1,   30, 60],   // 10 扶手
+      [1.4,   -14,   -38,   -1,   70, 70],   // 11 披风下摆与坐垫
+    ];
+    const frameSeat = (card) => {
+      const art = card.querySelector('.portrait-art');
+      const id = parseInt(card.dataset.id, 10);
+      if (!art || !(id >= 0)) return;
+      const [zoom, pan, top, flip, lx, ly] = SEAT_FRAMES[id % SEAT_FRAMES.length];
+      setVar(art, '--seat-zoom', `${zoom * 100}%`);
+      setVar(art, '--seat-pan', `${pan}%`);
+      setVar(art, '--seat-top', `${top}%`);
+      setVar(art, '--seat-flip', String(flip));
+      setVar(art, '--seat-nudge', `${Math.round(pan / 4)}%`);
+      setVar(art, '--seat-lx', `${lx}%`);
+      setVar(art, '--seat-ly', `${ly}%`);
+    };
 
     const onTable = () => {
       if (applying) return;
@@ -573,11 +621,17 @@
           if (seen.has(id)) setCls(c, 'fx-seen', true); else seen.add(id);
           const t0 = dying.get(id);
           if (t0 != null) {
-            if (now - t0 < 640) setCls(c, 'fx-die', true);
-            else dying.delete(id);
+            /* game.js 整体重绘会换掉卡片元素：新元素用负延迟接着播，不从头再来 */
+            if (now - t0 < DIE_MS) {
+              if (!c.classList.contains('fx-die')) {
+                setVar(c, '--die-at', `${-Math.round(now - t0)}ms`);
+                setCls(c, 'fx-die', true);
+              }
+            } else dying.delete(id);
           }
         });
         swapAvatars(table);
+        cards.forEach(frameSeat);
 
         const speakerId = activeIndex >= 0 ? cards[activeIndex]?.dataset.id : null;
         if (speakerId && speakerId !== animatedSpeaker) {
@@ -594,12 +648,8 @@
           if (knownDead.has(id)) continue;
           const card = table.querySelector(`.card[data-id="${id}"]`);
           if (!card) continue;
-          const { x, y } = FX.centerOf(card);
-          FX.burst(x, y, { color: [142, 20, 32], n: 26, spread: 3.4 });
-          FX.burst(x, y, { color: [120, 118, 112], n: 14, spread: 2, gravity: 0.028 });
-          FX.shake(0.6);
-          setCls(card, 'fx-die', true);
-          dying.set(id, now);
+          if (holdDeath()) pendingDeaths.add(id);
+          else startDying(card, id, now);
         }
         knownDead = dead;
       } finally { applying = false; }
@@ -609,6 +659,15 @@
       childList: true, subtree: true, attributes: true, attributeFilter: ['class'],
     });
     onTable();
+    if (veil) new MutationObserver(() => {
+      if (holdDeath() || !pendingDeaths.size) return;
+      const now = performance.now();
+      for (const id of pendingDeaths) {
+        const card = table.querySelector(`.card.dead[data-id="${id}"]`);
+        if (card) startDying(card, id, now);
+      }
+      pendingDeaths.clear();
+    }).observe(veil, { attributes: true, attributeFilter: ['class'] });
 
     /* 可选目标：把 #action 里按钮提到的名字标到卡上 */
     const action = $('action');
@@ -751,6 +810,73 @@
    * ============================================================ */
   const rp = $('rolePreview');
   if (rp) { new MutationObserver(upgradeRolePreview).observe(rp, { childList: true }); upgradeRolePreview(); }
+
+  /* ============================================================
+   * 九·二、文字里的 emoji → 原创符号
+   * 日志、标题、按钮、标签里的 emoji 是 game.js 写的，也进了发给 AI 的公开记录，
+   * 源头不动。这里只换"看到的样子"：原 emoji 原样留在视觉隐藏的 .glyph-src 里，
+   * textContent 一字不变——身份卡识别、结算判定、保存故事、读屏都照旧。
+   * 角色 / 昼夜 / 出局换成符号；其余纯装饰的 emoji 连同后面的空格一起藏掉。
+   * 用自定义标签 <ww-glyph> 而不是 span：样式表里有 `.ovroles span`、`.comic-panel span`
+   * 这类泛选择器，span 会被它们套上边框 / 大字号。
+   * ============================================================ */
+  const GLYPH_OF = {
+    '🐺': 'wolf', '🔮': 'seer', '🧪': 'witch', '🏹': 'hunter', '👤': 'villager', '🙈': 'unknown',
+    '🌙': 'moon', '🌑': 'moon', '☀': 'sun', '🌅': 'sun', '☠': 'death',
+  };
+  const GLYPH_DROP = ['👑', '🔍', '🧠', '💭', '⚠', '✅', '💊', '🗣', '🗳', '📊', '⚖', '🏆', '🌫', '🎭', '🔔', '📴', '🎉'];
+  const GLYPH_ALT = [...Object.keys(GLYPH_OF), ...GLYPH_DROP].join('|');
+  const GLYPH_RE = new RegExp(`(${GLYPH_ALT})(\\uFE0F?)( ?)`, 'gu');
+  const GLYPH_TEST = new RegExp(GLYPH_ALT, 'u');
+  /* 卡面头像 / 角色胶囊有自己的替换；表单控件里放不进元素 */
+  const GLYPH_SKIP = '.glyph, .avatar, .vote-portrait, #rolePreview, svg, option, select, textarea, script, style';
+
+  function glyphText(node) {
+    const txt = node.data;
+    const host = node.parentElement;
+    if (!GLYPH_TEST.test(txt) || !host || host.closest(GLYPH_SKIP)) return;
+    const dropAll = !!host.closest('#veil');   // 过场大字旁已有角色圣像，再放符号就重复了
+    const frag = document.createDocumentFragment();
+    let at = 0;
+    for (const m of txt.matchAll(GLYPH_RE)) {
+      if (m.index > at) frag.append(txt.slice(at, m.index));
+      const sig = dropAll ? null : GLYPH_OF[m[1]];
+      const wrap = document.createElement('ww-glyph');
+      const src = document.createElement('ww-glyph-src');
+      src.className = 'glyph-src';
+      if (sig) {
+        wrap.className = 'glyph';
+        wrap.dataset.glyph = sig;
+        wrap.innerHTML = sigilSVG(sig);
+        src.textContent = m[1] + m[2];
+      } else {
+        wrap.className = 'glyph glyph-drop';
+        src.textContent = m[0];
+      }
+      wrap.append(src);
+      frag.append(wrap);
+      if (sig && m[3]) frag.append(m[3]);
+      at = m.index + m[0].length;
+    }
+    if (at < txt.length) frag.append(txt.slice(at));
+    node.replaceWith(frag);
+  }
+  function glyphify(root) {
+    if (root.nodeType === Node.TEXT_NODE) { glyphText(root); return; }
+    if (root.nodeType !== Node.ELEMENT_NODE || root.closest(GLYPH_SKIP)) return;
+    const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+    const hits = [];
+    for (let n = walker.nextNode(); n; n = walker.nextNode()) if (GLYPH_TEST.test(n.data)) hits.push(n);
+    hits.forEach(glyphText);
+  }
+  glyphify(document.body);
+  /* 回调在微任务里跑，替换发生在绘制之前，不会先闪一下 emoji */
+  new MutationObserver((muts) => {
+    for (const m of muts) {
+      if (m.type === 'characterData') { if (m.target.isConnected) glyphText(m.target); }
+      else m.addedNodes.forEach((n) => { if (n.isConnected) glyphify(n); });
+    }
+  }).observe(document.body, { childList: true, subtree: true, characterData: true });
 
   /* 仪式圆盘刻度（一次性生成，纯装饰） */
   const ticks = document.querySelector('.disc-ticks');
