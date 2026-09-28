@@ -191,7 +191,6 @@
     if (screen === 'setup') {
       invitation.hidden = true;
       chapterPhase = '';
-      $('comicRecap').replaceChildren();
     }
   }
   [setup, game, $('lobby')].forEach(el => new MutationObserver(syncScreen).observe(el, { attributes: true, attributeFilter: ['class'] }));
@@ -223,52 +222,12 @@
     }
   }).observe($('action'), { childList: true });
 
-  // The recap samples only public events already rendered to this player.
-  // It is created after the result overlay opens; private night logs are excluded.
-  let story = [];
+  // A short chime when the result overlay opens.
   let resultVisible = false;
-  function buildRecap() {
+  new MutationObserver(() => {
     const visible = !overlay.classList.contains('hidden');
     if (visible === resultVisible) return;
     resultVisible = visible;
-    if (!visible) return;
-    const events = [...$('log').querySelectorAll('.logline.dead, .logline.day')]
-      .map(el => el.textContent.trim())
-      .filter(text => /昨夜|被放逐|被投票|开枪|计票结果|平票/.test(text));
-    const roles = [...$('ovRoles').children].map(el => el.textContent.trim()).join(' · ');
-    story = [
-      { label: 'I · 入夜', text: events[0] || '村庄入夜，每个人带着自己的秘密入席。' },
-      { label: 'II · 抉择', text: events.length > 1 ? events[events.length - 1] : '有人选择相信，有人选择沉默。最后的身份终于揭晓。' },
-      { label: 'III · 终章', text: $('ovTitle').textContent.trim() + ' ' + $('ovText').textContent.trim() },
-    ];
-    $('comicRecap').replaceChildren(...story.map(item => {
-      const article = document.createElement('article'); article.className = 'comic-panel';
-      const label = document.createElement('span'); label.textContent = item.label;
-      const p = document.createElement('p'); p.textContent = item.text;
-      article.append(label, p); return article;
-    }));
-    $('saveStory').dataset.roles = roles;
-    tone(392, .8);
-  }
-  new MutationObserver(buildRecap).observe(overlay, { attributes: true, attributeFilter: ['class'] });
-
-  $('saveStory').addEventListener('click', () => {
-    if (overlay.classList.contains('hidden') || !story.length) return;
-    const escape = value => String(value).replace(/[<>&"']/g, c => ({ '<': '&lt;', '>': '&gt;', '&': '&amp;', '"': '&quot;', "'": '&apos;' }[c]));
-    const wrap = (value, width) => {
-      const chars = Array.from(value); const lines = [];
-      for (let i = 0; i < chars.length; i += width) lines.push(chars.slice(i, i + width).join(''));
-      return lines;
-    };
-    const panels = story.map((item, i) => {
-      const lines = wrap(item.text, 23);
-      return `<g transform="translate(60 ${180 + i * 205})"><rect width="880" height="185" fill="#eee4ce"/><text x="25" y="38" font-size="22" fill="#953e2f">${escape(item.label)}</text>${lines.slice(0, 4).map((line, j) => `<text x="25" y="${77 + j * 25}" font-size="19" fill="#202728">${escape(line)}</text>`).join('')}</g>`;
-    }).join('');
-    const roleLines = wrap($('saveStory').dataset.roles || '', 40);
-    const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="1000" height="${900 + roleLines.length * 25}" viewBox="0 0 1000 ${900 + roleLines.length * 25}"><rect width="100%" height="100%" fill="#121a1b"/><g font-family="Georgia, Songti SC, serif"><text x="60" y="88" font-size="62" fill="#eee4ce">MIDNIGHT</text><text x="62" y="133" font-size="19" fill="#ce9a72">天黑，请闭眼 · 本局故事</text>${panels}${roleLines.map((line, i) => `<text x="60" y="${855 + i * 25}" font-size="17" fill="#eee4ce">${escape(line)}</text>`).join('')}</g></svg>`;
-    const url = URL.createObjectURL(new Blob([svg], { type: 'image/svg+xml;charset=utf-8' }));
-    const link = document.createElement('a'); link.href = url; link.download = 'midnight-story.svg';
-    document.body.append(link); link.click(); link.remove();
-    setTimeout(() => URL.revokeObjectURL(url), 1000);
-  });
+    if (visible) tone(392, .8);
+  }).observe(overlay, { attributes: true, attributeFilter: ['class'] });
 })();

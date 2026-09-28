@@ -157,11 +157,6 @@ html[data-phase="day"] #game .card.dead::before { background: url('assets/gilded
 @keyframes letterReveal { from { opacity: 0; transform: translateY(35px) rotate(-4deg); } to { opacity: 1; transform: none; } }
 .overlay { overflow-y: auto; align-items: flex-start; }
 .overlay .modal { max-width: 800px; margin: auto; background: #172123; border-color: #b9a584; }
-.comic-recap { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin: 24px 0; text-align: left; }
-.comic-panel { background: #eee4ce; color: #202728; padding: 16px; border: 1px solid #b9a584; min-height: 130px; }
-.comic-panel span { display: block; color: #9b402c; font: italic 25px Georgia, serif; margin-bottom: 12px; }
-.comic-panel p { color: #394236; font-size: 11px; margin: 0; overflow-wrap: anywhere; }
-#saveStory { margin: 0 10px 12px 0; }
 .modal .ovroles { max-height: none; }
 @media (min-width: 1600px) { .hero-art { background-position: center 43%; } }
 @media (max-width: 1050px) {
@@ -207,8 +202,6 @@ html[data-phase="day"] #game .card.dead::before { background: url('assets/gilded
   #game .action { grid-row: 4; grid-column: 1; margin: 20px 0; padding: 18px; }
   #game .dossier { grid-row: 5; grid-column: 1; padding: 16px; }
   #game .logbox { height: 220px; }
-  .comic-recap { grid-template-columns: 1fr; }
-  .comic-panel { min-height: auto; }
   .overlay .modal { padding: 24px 18px; }
 }
 /* Full-bleed illustrated cards: keep the square sprite undistorted and crop it

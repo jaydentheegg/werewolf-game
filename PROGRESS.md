@@ -2,7 +2,15 @@
 
 > 永久规则与项目地图看 CLAUDE.md。这里只写"现在改到哪、下一步做啥"。
 
-## 当前功能：对局观感打磨（已实现 ✅，PR jaydentheegg/werewolf-game#5）
+## 当前功能：删除结算页的本局故事（已实现 ✅）
+
+**git 状态（2026-09-27）：** 分支 claude/admiring-heisenberg-uem2jj。版本号全量 bump 到 ?v=50。
+- 结算弹窗去掉三幕故事回顾（#comicRecap：入夜 / 抉择 / 终章）和「保存本局故事 ↓」SVG 下载按钮（#saveStory）；
+  midnight.js 的 buildRecap / 下载逻辑、midnight.css 的 .comic-* / #saveStory 样式、README 里的描述一并删除。
+  结算弹出时的提示音保留（单独一个小 observer）。
+- 验证：静态服务 + 经典规则 AI 自动打一整局到结算，1440 / 390 截图，无 pageerror。
+
+## 上一个功能：对局观感打磨（已实现 ✅，PR jaydentheegg/werewolf-game#5）
 
 **git 状态（2026-09-27）：** 分支 claude/practical-cray-nxte8b，已 commit + push。版本号全量 bump 到 ?v=49。
 按用户从 8 条建议里挑的顺序做了五轮（8 条建议已全部完成）：
@@ -73,5 +81,6 @@
 - 开局清单改版。
 - 全量 bug 排查修复 13 项。
 - AI 玩家接入 Claude。
-- 对局观感打磨：去画框 / 钟面 / emoji 符号化 / 昼夜光 / 出局烧焦 / 座位镜头 / 图片瘦身（本次）。
+- 对局观感打磨：去画框 / 钟面 / emoji 符号化 / 昼夜光 / 出局烧焦 / 座位镜头 / 图片瘦身。
+- 删除结算页本局故事回顾与故事卡下载（本次）。
 - 更多历史见 git log。
